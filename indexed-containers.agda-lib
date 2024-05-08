@@ -1,0 +1,4 @@
+name: indexed-containers
+include: .
+depend: cubical
+flags: --cubical --postfix-projections

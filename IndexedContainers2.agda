@@ -4,6 +4,7 @@ open import Cubical.Data.Nat
 open import Cubical.Data.Unit
 open import Cubical.Data.Sigma
 open import Cubical.Foundations.Equiv using (_≃_)
+open import Cubical.Foundations.Isomorphism using (Iso; isoToEquiv)
 
 module IndexedContainers2 (indices : Type) where
 
@@ -53,15 +54,14 @@ module _ (F G : IndexedContainer) where
   _;_ .positions (s′ , v) i = Σ[ j ∈ indices ] Σ[ p′ ∈ P′ s′ j ] P (v j p′) i
 
   module _ (X : indices → Type) (i : indices) where
-    x : ⟦ G  ⟧ (⟦ F ⟧ X) i
-    x = {! !}
-
-    -- Σ(s′ : S′ i) ∀ (j : I) P′ s′ j → Σ(s : S j) ∀ (k : I) P s k → X k
-
-    p : ∀ i → ⟦ G ⟧ (⟦ F ⟧ X) i ≃ ⟦ _;_ ⟧ X i
-    p i .fst (s′ , br) = (s′ , λ j p → br j p .fst) , λ { k (j , (p′ , p)) → br j p′ .snd k p }
-    p i .snd = {! !}
-
+    ;-≃ : ∀ i → ⟦ G ⟧ (⟦ F ⟧ X) i ≃ ⟦ _;_ ⟧ X i
+    ;-≃ i = isoToEquiv ;-iso where
+      open Iso
+      ;-iso : Iso (⟦ G ⟧ (⟦ F ⟧ X) i) (⟦ _;_ ⟧ X i)
+      ;-iso .fun (s′ , br) = (s′ , λ j p → br j p .fst) , λ { k (j , (p′ , p)) → br j p′ .snd k p }
+      ;-iso .inv ((s′ , br) , ;ops) = s′ , λ { j p′ → br j p′ , λ { k p → ;ops k (j , p′ , p) } }
+      ;-iso .rightInv _ = refl
+      ;-iso .leftInv _ = refl
 -- 
 -- _² : IndexedContainer → IndexedContainer
 -- IC ² = IC ; IC

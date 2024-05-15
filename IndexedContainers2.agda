@@ -62,20 +62,19 @@ module _ (F G : IndexedContainer) where
       ;-iso .inv ((s′ , br) , ;ops) = s′ , λ { j p′ → br j p′ , λ { k p → ;ops k (j , p′ , p) } }
       ;-iso .rightInv _ = refl
       ;-iso .leftInv _ = refl
--- 
--- _² : IndexedContainer → IndexedContainer
--- IC ² = IC ; IC
--- 
--- module _ {F G H K}   where
---   _;ₕ_ : (α : F ⇒ H) (β : G ⇒ K) → (F ; G) ⇒ (H ; K)
---   (α ;ₕ β) .smap i = let
---       αsmap = α .smap
---       βsmap = β .smap
---       αpmap = α .pmap
---       βpmap = β .pmap
---     in {! !}
---   (α ;ₕ β) .pmap = {! !}
---   (α ;ₕ β) .pimap = {! !}
+
+_² : IndexedContainer → IndexedContainer
+IC ² = IC ; IC
+
+module _ {F G H K}   where
+  _;ₕ_ : (α : F ⇒ H) (β : G ⇒ K) → (F ; G) ⇒ (H ; K)
+  (α ;ₕ β) .smap (s′ , br) = β .smap s′ , λ { j p′ → α .smap (br j (β .pmap s′ p′)) }
+  (α ;ₕ β) .pmap = let
+      αsmap = α .smap
+      βsmap = β .smap
+      αpmap = α .pmap
+      βpmap = β .pmap
+    in λ { (s′ , br) (j , (t′ , br′)) → j , β .pmap s′ t′ , α .pmap (br j (β .pmap s′ t′)) br′ } 
 -- 
 -- module _ 
 --     (S : indices → Type)

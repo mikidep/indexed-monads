@@ -56,6 +56,11 @@ module _ (F G : IndexedContainer) where
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ; IC
 
+module _ {F} where
+  id₁ : F ⇒ F 
+  id₁ .smap s = s
+  id₁ .pmap s p = p
+
 module _ {F G H K} where
   _;ₕ_ : (α : F ⇒ H) (β : G ⇒ K) → (F ; G) ⇒ (H ; K)
   (α ;ₕ β) .smap (s′ , br) = β .smap s′ , λ { j p′ → α .smap (br j (β .pmap s′ p′)) }
@@ -65,23 +70,15 @@ module _ {F G H} where
   _;ᵥ_ : (α : F ⇒ G) (β : G ⇒ H) → (F ⇒ H)
   (α ;ᵥ β) .smap s = β .smap (α .smap s)
   (α ;ᵥ β) .pmap s p = α .pmap s (β .pmap (α .smap s) p)
--- 
--- module _ 
---     (S : indices → Type)
---     (P : {i : indices} → S i → Type)
---     (pi : {i : indices} {s : S i} → P s → indices) where
--- 
---   T : IndexedContainer
---   T .S = S
---   T .P = P
---   T .positionIndex = pi
--- 
---   record ICMonad : Type ℓ-zero where
---     field
---       η : idᶜ ⇒ T
---       μ : (T ²) ⇒ T
--- 
---   open ICMonad
+
+module _ (T : IndexedContainer) where 
+  record ICMonad : Type ℓ-zero where
+    field
+      η : idᶜ ⇒ T
+      μ : (T ²) ⇒ T
+      η-unit-l : {! !} ;ᵥ μ ≡ {! !}
+
+  open ICMonad
 -- 
 --   record ICMS : Type ℓ-zero where
 --     field

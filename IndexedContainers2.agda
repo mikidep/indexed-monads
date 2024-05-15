@@ -56,10 +56,15 @@ module _ (F G : IndexedContainer) where
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ; IC
 
-module _ {F G H K}   where
+module _ {F G H K} where
   _;ₕ_ : (α : F ⇒ H) (β : G ⇒ K) → (F ; G) ⇒ (H ; K)
   (α ;ₕ β) .smap (s′ , br) = β .smap s′ , λ { j p′ → α .smap (br j (β .pmap s′ p′)) }
   (α ;ₕ β) .pmap = λ { (s′ , br) (j , (t′ , br′)) → j , β .pmap s′ t′ , α .pmap (br j (β .pmap s′ t′)) br′ } 
+
+module _ {F G H} where
+  _;ᵥ_ : (α : F ⇒ G) (β : G ⇒ H) → (F ⇒ H)
+  (α ;ᵥ β) .smap s = β .smap (α .smap s)
+  (α ;ᵥ β) .pmap s p = α .pmap s (β .pmap (α .smap s) p)
 -- 
 -- module _ 
 --     (S : indices → Type)

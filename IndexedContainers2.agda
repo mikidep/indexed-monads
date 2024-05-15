@@ -22,10 +22,6 @@ record _⇒_ (F G : IndexedContainer) : Type ℓ-zero where
 
 open _⇒_
 
-id⇒ : ∀ {F} → F ⇒ F
-id⇒ .smap s = s
-id⇒ .pmap s p = p
-
 idᶜ : IndexedContainer
 idᶜ .S _ = Unit
 idᶜ .P _ _ = Unit
@@ -53,6 +49,20 @@ module _ (F G : IndexedContainer) where
       ;-iso .rightInv _ = refl
       ;-iso .leftInv _ = refl
 
+module _ {F} where
+  unitor-l : (idᶜ ; F) ⇒ F
+  unitor-l .smap (s , _) = s
+  unitor-l .pmap (s , _) p = _ , p , _
+
+  unitor-r : (F ; idᶜ) ⇒ F
+  unitor-r .smap (_ , ubr) = ubr _ _
+  unitor-r .pmap (_ , ubr) p = _ , _ , p
+
+module _ {F G H} where
+  associator : (F ; (G ; H)) ⇒ ((F ; G) ; H)
+  associator .smap ((s″ , op″) , op′) = s″ , λ j p″ → op″ j p″ , λ i p′ → op′ i (j , p″ , p′)
+  associator .pmap ((s″ , op″) , op′) (k , (p″ , (j , p′ , p))) = j , (k , p″ , p′) , p
+
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ; IC
 
@@ -76,7 +86,9 @@ module _ (T : IndexedContainer) where
     field
       η : idᶜ ⇒ T
       μ : (T ²) ⇒ T
-      η-unit-l : {! !} ;ᵥ μ ≡ {! !}
+      η-unit-l : (η ;ₕ id₁) ;ᵥ μ ≡ unitor-l
+      η-unit-r : (id₁ ;ₕ η) ;ᵥ μ ≡ unitor-r
+      μ-assoc : (id₁ ;ₕ μ) ;ᵥ μ ≡ (associator ;ᵥ ((μ ;ₕ id₁) ;ᵥ μ))
 
   open ICMonad
 -- 

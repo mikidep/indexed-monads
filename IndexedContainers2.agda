@@ -10,15 +10,15 @@ module IndexedContainers2 (indices : Type) where
 
 record IndexedContainer  : Type (ℓ-suc ℓ-zero) where
   field
-    shapes : (i : indices) → Type
-    positions : {i : indices} → shapes i → (j : indices) → Type
+    S : (i : indices) → Type
+    P : {i : indices} → S i → (j : indices) → Type
 
 open IndexedContainer
 
 record _⇒_ (F G : IndexedContainer) : Type ℓ-zero where
   field
-    smap : ∀ {i} → F .shapes i → G .shapes i
-    pmap : ∀ {i} (s : F .shapes i) {j} → G .positions (smap s) j → F .positions s j
+    smap : ∀ {i} → F .S i → G .S i
+    pmap : ∀ {i} (s : F .S i) {j} → G .P (smap s) j → F .P s j
 
 open _⇒_
 
@@ -27,31 +27,21 @@ id⇒ .smap s = s
 id⇒ .pmap s p = p
 
 idᶜ : IndexedContainer
-idᶜ .shapes _ = Unit
-idᶜ .positions _ _ = Unit
+idᶜ .S _ = Unit
+idᶜ .P _ _ = Unit
 
 module _ (F : IndexedContainer) where
-  private
-    S = F .shapes
-    P = F .positions
-
   ⟦_⟧ : (indices → Type) → (indices → Type)
-  ⟦_⟧ X i = Σ[ s ∈ S i ] (∀ j (p : P s j) → X j)
+  ⟦_⟧ X i = Σ[ s ∈ F .S i ] (∀ j (p : F .P s j) → X j)
 
   _⟨$⟩_ : {X Y : indices → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ X ⟧ i → ⟦ Y ⟧ i)
   _⟨$⟩_ f i (s , v) .fst = s
   _⟨$⟩_ f i (s , v) .snd j p = f j (v j p)
 
 module _ (F G : IndexedContainer) where
-  private
-    S = F .shapes
-    P = F .positions
-    S′ = G .shapes
-    P′ = G .positions
-
   _;_ : IndexedContainer
-  _;_ .shapes = ⟦ G ⟧ S 
-  _;_ .positions (s′ , v) i = Σ[ j ∈ indices ] Σ[ p′ ∈ P′ s′ j ] P (v j p′) i
+  _;_ .S = ⟦ G ⟧ (F .S) 
+  _;_ .P (s′ , v) i = Σ[ j ∈ indices ] Σ[ p′ ∈ G .P s′ j ] F .P (v j p′) i
 
   module _ (X : indices → Type) (i : indices) where
     ;-≃ : ∀ i → ⟦ G ⟧ (⟦ F ⟧ X) i ≃ ⟦ _;_ ⟧ X i
@@ -69,12 +59,7 @@ IC ² = IC ; IC
 module _ {F G H K}   where
   _;ₕ_ : (α : F ⇒ H) (β : G ⇒ K) → (F ; G) ⇒ (H ; K)
   (α ;ₕ β) .smap (s′ , br) = β .smap s′ , λ { j p′ → α .smap (br j (β .pmap s′ p′)) }
-  (α ;ₕ β) .pmap = let
-      αsmap = α .smap
-      βsmap = β .smap
-      αpmap = α .pmap
-      βpmap = β .pmap
-    in λ { (s′ , br) (j , (t′ , br′)) → j , β .pmap s′ t′ , α .pmap (br j (β .pmap s′ t′)) br′ } 
+  (α ;ₕ β) .pmap = λ { (s′ , br) (j , (t′ , br′)) → j , β .pmap s′ t′ , α .pmap (br j (β .pmap s′ t′)) br′ } 
 -- 
 -- module _ 
 --     (S : indices → Type)
@@ -82,8 +67,8 @@ module _ {F G H K}   where
 --     (pi : {i : indices} {s : S i} → P s → indices) where
 -- 
 --   T : IndexedContainer
---   T .shapes = S
---   T .positions = P
+--   T .S = S
+--   T .P = P
 --   T .positionIndex = pi
 -- 
 --   record ICMonad : Type ℓ-zero where

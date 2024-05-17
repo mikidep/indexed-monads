@@ -5,6 +5,9 @@ open import Cubical.Data.Unit
 open import Cubical.Data.Sigma
 open import Cubical.Foundations.Equiv using (_≃_)
 open import Cubical.Foundations.Isomorphism using (Iso; isoToEquiv)
+open import Cubical.Functions.FunExtEquiv using (funExt₂; funExtDep)
+
+open import Prelude
 
 module IndexedContainers2 (indices : Type) where
 
@@ -17,8 +20,8 @@ open IndexedContainer
 
 record _⇒_ (F G : IndexedContainer) : Type ℓ-zero where
   field
-    smap : ∀ {i} → F .S i → G .S i
-    pmap : ∀ {i} (s : F .S i) {j} → G .P (smap s) j → F .P s j
+    smap : ∀ i → F .S i → G .S i
+    pmap : ∀ {i} (s : F .S i) {j} → G .P (smap i s) j → F .P s j
 
 open _⇒_
 
@@ -51,66 +54,78 @@ module _ (F G : IndexedContainer) where
 
 module _ {F} where
   unitor-l : (idᶜ ; F) ⇒ F
-  unitor-l .smap (s , _) = s
+  unitor-l .smap _ (s , _) = s
   unitor-l .pmap (s , _) p = _ , p , _
 
   unitor-r : (F ; idᶜ) ⇒ F
-  unitor-r .smap (_ , ubr) = ubr _ _
-  unitor-r .pmap (_ , ubr) p = _ , _ , p
+  unitor-r .smap _ (_ , ubr) = ubr _ _
+  unitor-r .pmap _ p = _ , _ , p
 
 module _ {F G H} where
   associator : (F ; (G ; H)) ⇒ ((F ; G) ; H)
-  associator .smap ((s″ , op″) , op′) = s″ , λ j p″ → op″ j p″ , λ i p′ → op′ i (j , p″ , p′)
+  associator .smap _ ((s″ , op″) , op′) = s″ , λ j p″ → op″ j p″ , λ i p′ → op′ i (j , p″ , p′)
   associator .pmap ((s″ , op″) , op′) (k , (p″ , (j , p′ , p))) = j , (k , p″ , p′) , p
+
+module _ {F G} {α β : F ⇒ G} where
+  ⇒PathP :
+    (≡smap : (α .smap) ≡ (β .smap))
+    (≡pmap : (λ {i} → α .pmap {i}) ≡[ ≡smap ,  (λ sm → ∀ {i} s {j} → G .P (sm i s) j → F .P s j) ] (λ {i} → β .pmap {i}))
+    → α ≡ β
+  ⇒PathP ≡smap ≡pmap i = record { smap = ≡smap i ; pmap = ≡pmap i }
 
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ; IC
 
 module _ {F} where
   id₁ : F ⇒ F 
-  id₁ .smap s = s
+  id₁ .smap _ s = s
   id₁ .pmap s p = p
 
 module _ {F G H K} where
   _;ₕ_ : (α : F ⇒ H) (β : G ⇒ K) → (F ; G) ⇒ (H ; K)
-  (α ;ₕ β) .smap (s′ , br) = β .smap s′ , λ { j p′ → α .smap (br j (β .pmap s′ p′)) }
+  (α ;ₕ β) .smap _ (s′ , br) = β .smap _ s′ , λ { j p′ → α .smap _ (br j (β .pmap s′ p′)) }
   (α ;ₕ β) .pmap = λ { (s′ , br) (j , (t′ , br′)) → j , β .pmap s′ t′ , α .pmap (br j (β .pmap s′ t′)) br′ } 
 
 module _ {F G H} where
   _;ᵥ_ : (α : F ⇒ G) (β : G ⇒ H) → (F ⇒ H)
-  (α ;ᵥ β) .smap s = β .smap (α .smap s)
-  (α ;ᵥ β) .pmap s p = α .pmap s (β .pmap (α .smap s) p)
+  (α ;ᵥ β) .smap _ s = β .smap _ (α .smap _ s)
+  (α ;ᵥ β) .pmap s p = α .pmap s (β .pmap (α .smap _ s) p)
 
 module _ (T : IndexedContainer) where 
-  record ICMonad : Type ℓ-zero where
+  record ICMonoid : Type ℓ-zero where
     field
       η : idᶜ ⇒ T
       μ : (T ²) ⇒ T
       η-unit-l : (η ;ₕ id₁) ;ᵥ μ ≡ unitor-l
-      η-unit-r : (id₁ ;ₕ η) ;ᵥ μ ≡ unitor-r
-      μ-assoc : (id₁ ;ₕ μ) ;ᵥ μ ≡ (associator ;ᵥ ((μ ;ₕ id₁) ;ᵥ μ))
+      η-unit-r : (id₁ {F = T} ;ₕ η) ;ᵥ μ ≡ unitor-r
+      μ-assoc : (id₁ {F = T} ;ₕ μ) ;ᵥ μ ≡ (associator {F = T} ;ᵥ ((μ ;ₕ id₁) ;ᵥ μ))
 
-  open ICMonad
--- 
---   record ICMS : Type ℓ-zero where
---     field
---       e  : ∀ i → S i
---       _∙_ : ∀ {i} (s : S i)
---         → ((p : P s) → S (pi p))
---         → S i
---       _↖_ : ∀ {i} {s : S i}
---         → (v : (p : P s) → S (pi p))
---         → P (s ∙ v)
---         → P s
---       _↗_ : ∀ {i} {s : S i}
---         → (v : (p : P s) → S (pi p))
---         → (p′ : P (s ∙ v))
---         → P (v (v ↖ p′))
--- 
---       pi-e : ∀ i (p : P (e i)) → i ≡ pi p
---       pi-∙ : ∀ i s (v : (p : P s) → S (pi p)) (p : P (s ∙ v)) → pi (v ↗ p) ≡ pi p
+  open ICMonoid
+
+  record ICMS : Type ℓ-zero where
+    field
+      e  : ∀ i → T .S i
+      _∙_ : ∀ {i} (s : T .S i)
+        → (∀ j (p : T .P s j) → T .S j)
+        → T .S i
+      _↖ᵢ_ : ∀ {i} {s : T .S i}
+        → (v : ∀ j (p : T .P s j) → T .S j)
+        → {j : indices}
+        → T .P (s ∙ v) j
+        → indices
+      _↖_ : ∀ {i} {s : T .S i}
+        → (v : ∀ j (p : T .P s j) → T .S j)
+        → {j : indices}
+        → (p : T .P (s ∙ v) j)
+        → T .P s (v ↖ᵢ p)
+      _↗_ : ∀ {i} {s : T .S i}
+        → (v : ∀ j (p : T .P s j) → T .S j)
+        → {j : indices}
+        → (p : T .P (s ∙ v) j)
+        → T .P (v (v ↖ᵢ p) (v ↖ p)) j
 --       e-unit-l : ∀ i (s : S i) → s ≡ (e i) ∙ λ p → {! subst S (pi-e i p) !} s
---       e-unit-r : ∀ i (s : S i) → s ≡ s ∙ λ p → e (pi p) 
+      e-unit-r : ∀ i (s : T .S i) → s ∙ (λ j _ → e j) ≡ s 
+--
 --       ∙-assoc : ∀ i 
 --         (s : S i)
 --         (v : (p : P s) → S (pi p))
@@ -118,13 +133,21 @@ module _ (T : IndexedContainer) where
 --         → ((s ∙ v) ∙ λ p → subst S (pi-∙ i s v p) (w (v ↖ p) (v ↗ p))) ≡ s ∙ (λ p → v p ∙ w p)
 -- 
 -- 
---   module _ (icms : ICMS) where
---     open ICMS icms
--- 
---     ICMS→ICMonad : ICMonad
---     ICMS→ICMonad .η .smap = λ i _ → e i
---     ICMS→ICMonad .η .pmap = λ _ _ _ → tt
---     ICMS→ICMonad .η .pimap = λ i s p′ → pi-e i p′
---     ICMS→ICMonad .μ .smap = λ { i (s , v) → s ∙ v }
---     ICMS→ICMonad .μ .pmap = λ { i (s , v) p → (v ↖ p) , (v ↗ p) }
---     ICMS→ICMonad .μ .pimap = λ { i (s , v) p′ → pi-∙ i s v p′ }
+  module _ (icms : ICMS) where
+    open ICMS icms
+
+    ICMS→ICMonoid : ICMonoid
+    ICMS→ICMonoid .η .smap i = λ _ → e i
+    ICMS→ICMonoid .η .pmap = λ _ _ → tt
+    ICMS→ICMonoid .μ .smap _ (s , br) = s ∙ br
+    ICMS→ICMonoid .μ .pmap (s , br) p = br ↖ᵢ p , br ↖ p , (br ↗ p)
+    ICMS→ICMonoid .η-unit-l = ⇒PathP
+      (funExt₂ λ { i (s , _) → e-unit-r i s })
+      -- (implicitFunExt λ {i} → 
+      --   funExtDep λ { {x₀ = (s₀ , br₀)}{x₁ = (s₁ , br₁)} ≡smap → implicitFunExt λ {j} → funExtDep λ p → {! !} })
+      {! !}
+    ICMS→ICMonoid .η-unit-r = {! !}
+    ICMS→ICMonoid .μ-assoc = {! !}
+
+  -- λ s p → ((λ j p′ → e j) ↖ᵢ p) ≡ id
+  -- λ j p′ → e j) ↖ p ≡ id

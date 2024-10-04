@@ -1,4 +1,4 @@
-open import Cubical.Foundations.Prelude hiding (_∙_)
+open import Cubical.Foundations.Prelude
 open import Cubical.Core.Primitives using (Level; ℓ-zero; ℓ-suc)
 open import Cubical.Data.Nat
 open import Cubical.Data.Unit
@@ -10,12 +10,12 @@ open import Cubical.Foundations.Function using (idfun)
 
 open import Prelude
 
-module IndexedContainers2 (indices : Type) where
+module IndexedContainers2 (I : Type) where
 
 record IndexedContainer  : Type (ℓ-suc ℓ-zero) where
   field
-    S : (i : indices) → Type
-    P : {i : indices} → S i → (j : indices) → Type
+    S : (i : I) → Type
+    P : {i : I} → S i → (j : I) → Type
 
 open IndexedContainer
 
@@ -31,20 +31,20 @@ idᶜ .S _ = Unit
 idᶜ .P _ _ = Unit
 
 module _ (F : IndexedContainer) where
-  ⟦_⟧ : (indices → Type) → (indices → Type)
+  ⟦_⟧ : (I → Type) → (I → Type)
   ⟦_⟧ X i = Σ[ s ∈ F .S i ] (∀ j (p : F .P s j) → X j)
 
-  _⟨$⟩_ : {X Y : indices → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ X ⟧ i → ⟦ Y ⟧ i)
+  _⟨$⟩_ : {X Y : I → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ X ⟧ i → ⟦ Y ⟧ i)
   _⟨$⟩_ f i (s , v) .fst = s
   _⟨$⟩_ f i (s , v) .snd j p = f j (v j p)
 
 module _ (F G : IndexedContainer) where
   _;_ : IndexedContainer
   _;_ .S = ⟦ G ⟧ (F .S) 
-  _;_ .P (s′ , v) i = Σ[ j ∈ indices ] Σ[ p′ ∈ G .P s′ j ] F .P (v j p′) i
+  _;_ .P (s′ , v) i = Σ[ j ∈ I ] Σ[ p′ ∈ G .P s′ j ] F .P (v j p′) i
   
   -- interpretation is strong monoidal
-  module _ (X : indices → Type) (i : indices) where
+  module _ (X : I → Type) (i : I) where
     ;-≃ : ∀ i → ⟦ G ⟧ (⟦ F ⟧ X) i ≃ ⟦ _;_ ⟧ X i
     ;-≃ i = isoToEquiv ;-iso where
       open Iso
@@ -113,66 +113,59 @@ module _ (T : IndexedContainer) where
   record ICMS : Type ℓ-zero where
     field
       e  : ∀ i → T .S i
-      _∙_ : ∀ {i} (s : T .S i)
+      _•_ : ∀ {i} (s : T .S i)
         → (∀ j (p : T .P s j) → T .S j)
         → T .S i
-      _↖ᵢ_ : ∀ {i} {s : T .S i}
-        → (v : ∀ j (p : T .P s j) → T .S j)
-        → {j : indices}
-        → (p : T .P (s ∙ v) j)
-        → indices
       _↖_ : ∀ {i} {s : T .S i}
         → (v : ∀ j (p : T .P s j) → T .S j)
-        → {j : indices}
-        → (p : T .P (s ∙ v) j)
-        → T .P s (v ↖ᵢ p)
-      _↗ᵢ_ : ∀ {i} {s : T .S i}
-        → (v : ∀ j (p : T .P s j) → T .S j)
-        → {j : indices}
-        → (p : T .P (s ∙ v) j)
-        → indices
+        → {j : I}
+        → (p : T .P (s • v) j)
+        → Σ I (T .P s) 
       _↗_ : ∀ {i} {s : T .S i}
         → (v : ∀ j (p : T .P s j) → T .S j)
-        → {j : indices}
-        → (p : T .P (s ∙ v) j)
-        → T .P (v (v ↖ᵢ p) (v ↖ p)) (v ↗ᵢ p)
-      e-unit-l : ∀ i (s : ∀ j → T .S j) → (e i ∙ (λ j _ → s j)) ≡ s i 
-      e-unit-r : ∀ i (s : T .S i) → s ∙ (λ j _ → e j) ≡ s 
+        → {j : I}
+        → (p : T .P (s • v) j)
+        → T .P (v ((v ↖ p) .fst) ((v ↖ p) .snd)) j
+      e-unit-l : ∀ i (s : ∀ j → T .S j) → (e i • (λ j _ → s j)) ≡ s i 
+      e-unit-r : ∀ i (s : T .S i) → s • (λ j _ → e j) ≡ s 
       -- e-act-l : ∀ {i} (s : T .S i) {j} → (λ p → (λ j _ → e j) ↖ p) ≡[ e-unit-r i s , (λ s′ → T .P s′ j → T .P s j) ] idfun _ 
 --
---       ∙-assoc : ∀ i 
+--       •-assoc : ∀ i 
 --         (s : S i)
 --         (v : (p : P s) → S (pi p))
 --         (w :  (p : P s) → (p′ : P (v p)) → S (pi p′))
---         → ((s ∙ v) ∙ λ p → subst S (pi-∙ i s v p) (w (v ↖ p) (v ↗ p))) ≡ s ∙ (λ p → v p ∙ w p)
+--         → ((s • v) • λ p → subst S (pi-• i s v p) (w (v ↖ p) (v ↗ p))) ≡ s • (λ p → v p • w p) 
 -- 
 -- 
   module _ (icms : ICMS) where
     open ICMS icms
     open ICMonoid
 
-    -- ICMS→ICMonoid : ICMonoid
-    -- ICMS→ICMonoid .η .smap i = λ _ → e i
-    -- ICMS→ICMonoid .η .pmap = λ _ _ _ → tt
-    -- ICMS→ICMonoid .μ .smap _ (s , br) = s ∙ br
-    -- ICMS→ICMonoid .μ .pmap (s , br) _ p = _ , br ↖ p , (br ↗ p)
-    -- ICMS→ICMonoid .η-unit-l = ⇒PathP
-    --   (funExt₂ λ { i (s , _) → e-unit-r i s })
-    --   {! !} -- λ { i (s , _) j p → j , e-act-l s i p , tt }
-    -- ICMS→ICMonoid .η-unit-r = ⇒PathP
-    --   (funExt₂ λ { i (_ , s) → e-unit-l i λ j → s j tt })
-    --   λ { i (_ , s) j p → {! !} }
-    -- ICMS→ICMonoid .μ-assoc = {! !}
-
-    --   (implicitFunExt λ {i} → funExt λ { (s , _) → λ i → λ j p → j , e-act-l s i p , tt })
-    --
-    --
-    --   Start figuring out inverse data
+    ICMS→ICMonoid : ICMonoid
+    ICMS→ICMonoid .η .smap i _ = e i
+    ICMS→ICMonoid .η .pmap = _
+    ICMS→ICMonoid .μ .smap i (s , TPs→ᵢTS)= s • TPs→ᵢTS
+    ICMS→ICMonoid .μ .pmap (s , TPs→ᵢTS) j TPs• = let
+        (i′ , p′) = TPs→ᵢTS ↖ TPs•
+        p″ = TPs→ᵢTS ↗ TPs• 
+      in i′ , p′ , p″
+    ICMS→ICMonoid .η-unit-l = {! !}
+    ICMS→ICMonoid .η-unit-r = {! !}
+    ICMS→ICMonoid .μ-assoc = {! !}
 
   module _ (icmon : ICMonoid) where
     open ICMS
     open ICMonoid icmon
 
     ICMonoid→ICMS : ICMS
-    ICMonoid→ICMS = {! !}
+    ICMonoid→ICMS .e i = η .smap i _
+    ICMonoid→ICMS ._•_ {i} s TPs→ᵢTS = μ .smap i (s , TPs→ᵢTS)
+    ICMonoid→ICMS ._↖_ {i} {s} TPs→ᵢTS {j} TPs• = 
+        let i′ , p′ , _ = μ .pmap (s , TPs→ᵢTS) j TPs•
+      in i′ , p′
+    ICMonoid→ICMS ._↗_ {i} {s} TPs→ᵢTS {j} TPs• = 
+        let _ , _ , p″ = μ .pmap (s , TPs→ᵢTS) j TPs•
+      in p″
+    ICMonoid→ICMS .e-unit-l = {! !}
+    ICMonoid→ICMS .e-unit-r = {! !}
     

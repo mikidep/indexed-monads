@@ -26,6 +26,25 @@ record _⇒_ (F G : IndexedContainer) : Type ℓ-zero where
 
 open _⇒_
 
+module _ {F G} {α β : F ⇒ G} where
+  ⇒PathP :
+    (≡smap : α .smap ≡ β .smap)
+    (≡pmap : PathP (λ 𝒾 → ∀ {i} (s : F .S i) j → G .P (≡smap 𝒾 i s) j → F .P s j) (α .pmap) (β .pmap))
+    → α ≡ β
+  ⇒PathP ≡smap ≡pmap 𝒾 .smap = ≡smap 𝒾
+  ⇒PathP ≡smap ≡pmap 𝒾 .pmap = ≡pmap 𝒾
+
+  ⇒PathP-ext :
+    (≡smap : ∀ {i} s → α .smap i s ≡ β .smap i s)
+    (≡pmap : ∀ (i : I) s j
+      → {p₁ : G .P (α .smap i s) j} {p₂ : G .P (β .smap i s) j}
+        (p≡ : p₁ ≡[ ≡smap s , (λ s′ → G .P s′ j) ] p₂)
+      → (α .pmap s j p₁) ≡ (β .pmap s j p₂))
+    → α ≡ β
+  ⇒PathP-ext ≡smap ≡pmap = ⇒PathP
+    (funExt₂ λ _ s → ≡smap s)
+    (implicitFunExt λ {i} → funExt₂ λ s j → funExtDep (≡pmap i s j))
+
 idᶜ : IndexedContainer
 idᶜ .S _ = Unit
 idᶜ .P _ _ = Unit
@@ -67,13 +86,6 @@ module _ {F G H} where
   associator : (F ; (G ; H)) ⇒ ((F ; G) ; H)
   associator .smap _ ((s″ , op″) , op′) = s″ , λ j p″ → op″ j p″ , λ i p′ → op′ i (j , p″ , p′)
   associator .pmap ((s″ , op″) , op′) j′  (k , (p″ , (j , p′ , p))) = j , (k , p″ , p′) , p
-
-module _ {F G} {α β : F ⇒ G} where
-  ⇒PathP :
-    (≡smap : (α .smap) ≡ (β .smap))
-    (≡pmap : (λ {i} → α .pmap {i}) ≡[ ≡smap ,  (λ sm → ∀ {i} s j → G .P (sm i s) j → F .P s j) ] (λ {i} → β .pmap {i}))
-    → α ≡ β
-  ⇒PathP ≡smap ≡pmap i = record { smap = ≡smap i ; pmap = ≡pmap i }
 
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ; IC
@@ -128,7 +140,8 @@ module _ (T : IndexedContainer) where
         → T .P (v ((v ↖ p) .fst) ((v ↖ p) .snd)) j
       e-unit-l : ∀ i (s : ∀ j → T .S j) → (e i • (λ j _ → s j)) ≡ s i 
       e-unit-r : ∀ i (s : T .S i) → s • (λ j _ → e j) ≡ s 
-      -- e-act-l : ∀ {i} (s : T .S i) {j} → (λ p → (λ j _ → e j) ↖ p) ≡[ e-unit-r i s , (λ s′ → T .P s′ j → T .P s j) ] idfun _ 
+      e-act-r : ∀ i (s : T .S i) j (p : T .P s j)
+        → (λ j _ → e j) ↖ subst (λ s → T .P s j) (sym (e-unit-r i s)) p ≡ (j , p)
 --
 --       •-assoc : ∀ i 
 --         (s : S i)
@@ -149,7 +162,9 @@ module _ (T : IndexedContainer) where
         (i′ , p′) = TPs→ᵢTS ↖ TPs•
         p″ = TPs→ᵢTS ↗ TPs• 
       in i′ , p′ , p″
-    ICMS→ICMonoid .η-unit-l = {! !}
+    ICMS→ICMonoid .η-unit-l = ⇒PathP-ext
+      (λ { (s , _) → e-unit-r _ s })
+      λ { i (s , _) j {p₁} p≡ → {! e-act-r i s j p₁ !} } -- Leave for now
     ICMS→ICMonoid .η-unit-r = {! !}
     ICMS→ICMonoid .μ-assoc = {! !}
 
@@ -168,4 +183,5 @@ module _ (T : IndexedContainer) where
       in p″
     ICMonoid→ICMS .e-unit-l = {! !}
     ICMonoid→ICMS .e-unit-r = {! !}
+    ICMonoid→ICMS .e-act-r = {! !}
     

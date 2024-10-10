@@ -138,8 +138,12 @@ module _ (T : IndexedContainer) where
         → {j : I}
         → (p : T .P (s • v) j)
         → T .P (v ((v ↖ p) .fst) ((v ↖ p) .snd)) j
-      e-unit-l : ∀ i (s : ∀ j → T .S j) → (e i • (λ j _ → s j)) ≡ s i 
+      e-unit-l : ∀ i (sect-s : ∀ j → T .S j) → (e i • (λ j _ → sect-s j)) ≡ sect-s i 
       e-unit-r : ∀ i (s : T .S i) → s • (λ j _ → e j) ≡ s 
+      e-act-l₁ : ∀ i (sect-s : ∀ i′ → T .S i′) j (p : T .P (sect-s i) j)
+        → ((λ j _ → sect-s j) ↖ subst (λ s → T .P s j) (sym (e-unit-l i sect-s)) p) .fst ≡ i
+      e-act-l₂ : ∀ i (sect-s : ∀ i′ → T .S i′) j (p : T .P (sect-s i) j)
+        → (λ j _ → sect-s j) ↗ subst (λ s → T .P s j) (sym (e-unit-l i sect-s)) p ≡ subst (λ i → T .P (sect-s i) j) {! !} p
       e-act-r : ∀ i (s : T .S i) j (p : T .P s j)
         → (λ j _ → e j) ↖ subst (λ s → T .P s j) (sym (e-unit-r i s)) p ≡ (j , p)
 --
@@ -164,8 +168,13 @@ module _ (T : IndexedContainer) where
       in i′ , p′ , p″
     ICMS→ICMonoid .η-unit-l = ⇒PathP-ext
       (λ { (s , _) → e-unit-r _ s })
-      λ { i (s , _) j {p₁} p≡ → {! e-act-r i s j p₁ !} } -- Leave for now
-    ICMS→ICMonoid .η-unit-r = {! !}
+      λ { i (s , _) j {p₁} {p₂} p≡ → 
+        let
+          eq = e-act-r i s j p₂
+        in {! !} }
+    ICMS→ICMonoid .η-unit-r = ⇒PathP-ext
+      (λ { {i} (_ , sect-s) → e-unit-l i λ { j → sect-s j tt } })
+      λ { i (_ , sect-s) j {p₁} p≡ → {! ((λ j₁ Ksp → sect-s j₁ tt) ↖ p₁)!} }
     ICMS→ICMonoid .μ-assoc = {! !}
 
   module _ (icmon : ICMonoid) where
@@ -183,5 +192,6 @@ module _ (T : IndexedContainer) where
       in p″
     ICMonoid→ICMS .e-unit-l = {! !}
     ICMonoid→ICMS .e-unit-r = {! !}
+    ICMonoid→ICMS .e-act-l₁ = {! !}
     ICMonoid→ICMS .e-act-r = {! !}
     

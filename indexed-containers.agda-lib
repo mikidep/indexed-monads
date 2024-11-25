@@ -1,4 +1,4 @@
 name: indexed-containers
 include: .
 depend: cubical
-flags: --cubical --postfix-projections --hidden-argument-puns
+flags: --cubical --postfix-projections --hidden-argument-puns --lossy-unification

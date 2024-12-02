@@ -20,24 +20,24 @@ record IndexedContainer  : Type (ℓ-suc ℓ-zero) where
 module _ where
   open IndexedContainer
 
-  record _⇒_ (F G : IndexedContainer) : Type ℓ-zero where
+  record _⇒_ (F G : IndexedContainer) : Type (ℓ-suc ℓ-zero) where
     field
       σ : ∀ {i} → F .S i → G .S i
       π : ∀ {i} (s : F .S i) {j} → G .P (σ s) j → F .P s j
 
   open _⇒_ public
 
-  module _ {F G} {α β : F ⇒ G} where
+  module _ {F G : IndexedContainer} {α β : F ⇒ G} where
     ⇒PathP :
       (≡σ : (λ {i} → α .σ {i}) ≡ β .σ)
-      (≡π : PathP (λ ι → ∀ {i} s {j} → G .P (≡σ ι s) j → F .P s j) (λ {i} → α .π {i}) (β .π))
+      (≡π : PathP {ℓ-zero} (λ ι → ∀ {i} (s : F .S i) {j} → G .P (≡σ ι s) j → F .P s j) (λ {i} → α .π {i}) (β .π))
       → α ≡ β
     ⇒PathP ≡σ ≡π 𝒾 .σ = ≡σ 𝒾
     ⇒PathP ≡σ ≡π 𝒾 .π = ≡π 𝒾
 
     ⇒PathP-ext :
-      (≡σ : ∀ {i} s → α .σ s ≡ β .σ s)
-      (≡π : ∀ (i : I) s j
+      (≡σ : ∀ {i} (s : F .S i) → α .σ s ≡ β .σ s)
+      (≡π : ∀ (i : I) (s : F .S i) j
         → {p₁ : G .P (α .σ s) j} {p₂ : G .P (β .σ s) j}
           (p≡ : p₁ ≡[ ≡σ s , (λ s′ → G .P s′ j) ] p₂)
         → (α .π s p₁) ≡ (β .π s p₂))
@@ -177,19 +177,20 @@ module _ (T : IndexedContainer) where
   ΣP : {i : I} → S i → Type
   ΣP s = Σ I (P s)
 
-  record RawICMonoid : Type ℓ-zero where
+  record RawICMonoid : Type (ℓ-suc ℓ-zero) where
     field
       η : idᶜ ⇒ T
       μ : (T ²) ⇒ T
 
-  record is-ICMonoid (raw : RawICMonoid) : Type ℓ-zero where
+  record isICMonoid (raw : RawICMonoid) : Type (ℓ-suc ℓ-zero) where
     open RawICMonoid raw
     field
       η-unit-l : (η ;ₕ id₁) ;ᵥ μ ≡ unitor-l
       η-unit-r : (id₁ {F = T} ;ₕ η) ;ᵥ μ ≡ unitor-r
       μ-assoc : (id₁ {F = T} ;ₕ μ) ;ᵥ μ ≡ (associator {F = T} ;ᵥ ((μ ;ₕ id₁) ;ᵥ μ))
 
-  record ICMS : Type ℓ-zero where
+  record RawICMS : Type ℓ-zero where
+    infixl 24 _•_
     field
       e  : ∀ i → S i
       _•_ : ∀ {i} (s : S i)
@@ -208,6 +209,10 @@ module _ (T : IndexedContainer) where
         → {j : I} (p : P (s • v) j)
         → P (v (v ↖ p)) j
       P-e-idx : ∀ {i} {j} → P (e i) j → i ≡ j
+
+  record isICMS (raw : RawICMS) : Type ℓ-zero where
+    open RawICMS raw
+    field
       e-unit-l : ∀ {i} (s : S i) → s • (λ {j} _ → e j) ≡ s 
       ↑-unit-l : ∀ {i} {s : S i} {j}
         → (p : P (s • (λ {j} _ → e j)) j)  
@@ -225,50 +230,105 @@ module _ (T : IndexedContainer) where
             tr = subst (_≡ j) (↑-unit-l p)
           in
             tr $ P-e-idx ((λ {j} _ → e j) ↗ p) ≡ refl
---
---       •-assoc : ∀ i 
---         (s : S i)
---         (v : ∀ (p : ΣP s) → S (p .fst))
---         (w : ∀ (p : ΣP s) (p′ : ΣP (v p)) → S (p′ .fst))
---         → ((s • v) • λ p → w (v ↖ p) (p .fst , (v ↗ p))) ≡ s • (λ p → v p • w p) 
---       ↖↖-↖ : ∀ i 
---         (s : S i)
---         (v : ∀ (p : ΣP s) → S (p .fst))
---         (w : ∀ (p : ΣP s) (p′ : ΣP (v p)) → S (p′ .fst))
---         (p : ΣP (s • (λ p → v p • w p)))
---         → {! ? ↖ (? ↖ p) !} ≡ (λ p → v p • w p) ↖ p
---
---
---
-  module _ (icms : ICMS) where
-    open ICMS icms
+
+      e-unit-r : ∀ {i} (ss : ∀ {j} → i ≡ j → S j)
+        → e i • (λ {j} p → ss (P-e-idx p)) ≡ ss refl 
+      ↑-unit-r : ∀ {i} (ss : ∀ {j} → i ≡ j → S j) {j}
+        → (p : P (e i • (λ p → ss (P-e-idx p))) j)
+        → (λ p′ → ss (P-e-idx p′)) ↑ p ≡ i
+      ↖-unit-r : ∀ {i} (ss : ∀ {j} → i ≡ j → S j) {j}
+        → (p : P (e i • (λ p → ss (P-e-idx p))) j)
+        → let
+            tr = subst (i ≡_) (↑-unit-r ss p)
+          in
+            tr $ P-e-idx ((λ p′ → ss (P-e-idx p′)) ↖ p) ≡ refl
+      ↗-unit-r : ∀ {i} (ss : ∀ {j} → i ≡ j → S j) {j}
+        → (p : P (e i • (λ p → ss (P-e-idx p))) j)
+        → let
+            -- What exactly is this?
+            -- Looks like a subst (P _ j) (cong₂ something something) with
+            -- an implicit first argument but I don't feel like refactoring it
+            tr₁ : P (ss (P-e-idx ((λ p′ → ss (P-e-idx p′)) ↖ p))) j → P (ss refl) j
+            tr₁ = transport (λ ι → P (ss (toPathP (↖-unit-r ss p) ι)) j)
+            tr₂ = subst (λ s → P s j) (e-unit-r ss)
+          in
+            tr₁ $ (λ p′ → ss (P-e-idx p′)) ↗ p ≡ tr₂ $ p
+
+      •-assoc : ∀ {i} 
+        (s : S i)
+        (s′ : {j : I} → P s j → S j)
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        → s • s′ • (λ p → s″ (s′ ↑ p , s′ ↖ p , s′ ↗ p)) ≡ s • (λ {j} p → s′ p • (λ p′ → s″ (j , p , p′)))
+     
+      ↑-assoc-1 : ∀ {i} {j} 
+        (s : S i)
+        (s′ : {j : I} → P s j → S j)
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        (p : P (s • s′ •  (λ p′ → s″ ((s′ ↑ p′) , (s′ ↖ p′) , (s′ ↗ p′)))) j) 
+        → let
+          tr = subst (λ s → P s j) (•-assoc s s′ s″)
+        in
+            (λ q → s″ (s′ ↑ q , s′ ↖ q , s′ ↗ q)) ↑ p 
+          ≡
+            (λ p′ → s″
+              ( (λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↑ tr p
+              , (λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↖ tr p 
+              , p′
+              )
+            ) ↑ ((λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↗ tr p)
+
+  record ICMS : Type ℓ-zero where
+    field
+      icms : RawICMS
+      is-icms : isICMS icms
+
+  module _ (icms : RawICMS) where
+    open RawICMS icms
     open RawICMonoid
 
-    ICMS→RawICMonoid : RawICMonoid
-    ICMS→RawICMonoid .η .σ {i} _ = e i
-    ICMS→RawICMonoid .η .π _ p = P-e-idx p
-    ICMS→RawICMonoid .μ .σ (s , v) = s • v
-    ICMS→RawICMonoid .μ .π (s , v) p = v ↑ p , v ↖ p , v ↗ p
+    RawICMS→RawICMonoid : RawICMonoid
+    RawICMS→RawICMonoid .η .σ {i} _ = e i
+    RawICMS→RawICMonoid .η .π _ p = P-e-idx p
+    RawICMS→RawICMonoid .μ .σ (s , v) = s • v
+    RawICMS→RawICMonoid .μ .π (s , v) p = v ↑ p , v ↖ p , v ↗ p
 
-    open is-ICMonoid
+    open isICMonoid
 
-    ICMS→is-ICMonoid : is-ICMonoid ICMS→RawICMonoid
-    ICMS→is-ICMonoid .η-unit-l = ⇒PathP-ext′
-      (λ { (s , v) → e-unit-l s })
-      λ { (s , v) {j} p → ΣPathP
-        ( ↑-unit-l p
-        , ΣPathP 
-          ( toPathP (↖-unit-l p)
-          , toPathP (↗-unit-l p)
+    module _ (is-icms : isICMS icms) where
+      open isICMS is-icms
+
+      isICMS→isICMonoid : isICMonoid RawICMS→RawICMonoid
+      isICMS→isICMonoid .η-unit-l = ⇒PathP-ext′
+        (λ { (s , v) → e-unit-l s })
+        λ { (s , v) {j} p → ΣPathP
+          ( ↑-unit-l p
+          , ΣPathP 
+            ( toPathP (↖-unit-l p)
+            , toPathP (↗-unit-l p)
+            )
           )
-        )
-      }
-    ICMS→is-ICMonoid .η-unit-r = {! !}
-    ICMS→is-ICMonoid .μ-assoc  = {! !}
+        }
+      isICMS→isICMonoid .η-unit-r = ⇒PathP-ext′
+        (λ { (_ , ss) → e-unit-r ss })
+        λ { (_ , ss) p → ΣPathP
+          ( ↑-unit-r ss p
+          , ΣPathP
+            ( toPathP (↖-unit-r ss p)
+            , toPathP (↗-unit-r ss p)
+            )
+          )
+        }
+      isICMS→isICMonoid .μ-assoc  = ⇒PathP-ext′
+        (λ { ((s , s′) , s″) → •-assoc s s′ s″ })
+        λ { ((s , s′) , s″) p → ΣPathP
+          ( ↑-assoc-1 s s′ s″ p 
+          , {! !}
+          )
+        }
 
-  module _ (icmon : RawICMonoid) where
-    open ICMS
-    open RawICMonoid icmon
+  -- module _ (icmon : RawICMonoid) where
+  --   open ICMS
+  --   open RawICMonoid icmon
 
     -- RawICMonoid→ICMS : ICMS
     -- RawICMonoid→ICMS .e i = η .σ i _

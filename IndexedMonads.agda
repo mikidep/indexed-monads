@@ -209,6 +209,12 @@ module _ (T : IndexedContainer) where
         → {j : I} (p : P (s • v) j)
         → P (v (v ↖ p)) j
       P-e-idx : ∀ {i} {j} → P (e i) j → i ≡ j
+    -- better notation needed
+    _ψ_ : ∀ {i} {s : S i}
+        → (v : ∀ {j} (p : P s j) → S j)
+        → {j : I} (p : P (s • v) j)
+        → Σ[ k ∈ I ] Σ[ q ∈ P s k ] (P (v q) j)
+    v ψ p = v ↑ p , v ↖ p , v ↗ p
 
   record isICMS (raw : RawICMS) : Type ℓ-zero where
     open RawICMS raw
@@ -258,17 +264,17 @@ module _ (T : IndexedContainer) where
         (s : S i)
         (s′ : {j : I} → P s j → S j)
         (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
-        → s • s′ • (λ p → s″ (s′ ↑ p , s′ ↖ p , s′ ↗ p)) ≡ s • (λ {j} p → s′ p • (λ p′ → s″ (j , p , p′)))
+        → s • s′ • (λ p → s″ (s′ ψ p)) ≡ s • (λ {j} p → s′ p • (λ p′ → s″ (j , p , p′)))
      
-      ↑-assoc-1 : ∀ {i} {j} 
+      ↑-↗↑-assoc : ∀ {i} {j} 
         (s : S i)
         (s′ : {j : I} → P s j → S j)
         (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
-        (p : P (s • s′ •  (λ p′ → s″ ((s′ ↑ p′) , (s′ ↖ p′) , (s′ ↗ p′)))) j) 
+        (p : P (s • s′ •  (λ p′ → s″ (s′ ψ p′))) j) 
         → let
           tr = subst (λ s → P s j) (•-assoc s s′ s″)
         in
-            (λ q → s″ (s′ ↑ q , s′ ↖ q , s′ ↗ q)) ↑ p 
+            (λ q → s″ (s′ ψ q)) ↑ p 
           ≡
             (λ p′ → s″
               ( (λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↑ tr p
@@ -276,6 +282,31 @@ module _ (T : IndexedContainer) where
               , p′
               )
             ) ↑ ((λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↗ tr p)
+
+      ↖↑-↑-assoc : ∀ {i} {j} 
+        (s : S i)
+        (s′ : {j : I} → P s j → S j)
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        (p : P (s • s′ •  (λ p′ → s″ (s′ ψ p′))) j) 
+        → let
+          tr = subst (λ s → P s j) (•-assoc s s′ s″)
+        in
+            s′ ↑ ((λ {k} q → s″ (s′ ψ q)) ↖ p)
+          ≡
+            (λ {k} q → s′ q • (λ p′ → s″ (k , q , p′))) ↑ tr p
+
+      some-assoc : ∀ {i} {j} 
+        (s : S i)
+        (s′ : {j : I} → P s j → S j)
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        (p : P (s • s′ •  (λ p′ → s″ (s′ ψ p′))) j) 
+        → let
+          trl = subst (P s) (↖↑-↑-assoc s s′ s″ p) 
+          trr = subst (λ s → P s j) (•-assoc s s′ s″)
+        in
+          trl $ s′ ↖ ((λ q → s″ (s′ ψ q)) ↖ p)
+        ≡
+          (λ {k} q → s′ q • (λ p′ → s″ (k , q , p′))) ↖ trr p
 
   record ICMS : Type ℓ-zero where
     field
@@ -290,7 +321,7 @@ module _ (T : IndexedContainer) where
     RawICMS→RawICMonoid .η .σ {i} _ = e i
     RawICMS→RawICMonoid .η .π _ p = P-e-idx p
     RawICMS→RawICMonoid .μ .σ (s , v) = s • v
-    RawICMS→RawICMonoid .μ .π (s , v) p = v ↑ p , v ↖ p , v ↗ p
+    RawICMS→RawICMonoid .μ .π (s , v) p = v ψ p
 
     open isICMonoid
 
@@ -321,8 +352,16 @@ module _ (T : IndexedContainer) where
       isICMS→isICMonoid .μ-assoc  = ⇒PathP-ext′
         (λ { ((s , s′) , s″) → •-assoc s s′ s″ })
         λ { ((s , s′) , s″) p → ΣPathP
-          ( ↑-assoc-1 s s′ s″ p 
-          , {! !}
+          ( ↑-↗↑-assoc s s′ s″ p 
+          , ΣPathP
+            ( ΣPathP
+              ( ↖↑-↑-assoc s s′ s″ p     
+              , ΣPathP
+                ( toPathP {! !}
+                , {! !}
+                )
+              ) , {! !}
+            )
           )
         }
 

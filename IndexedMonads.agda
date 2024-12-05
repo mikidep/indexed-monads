@@ -215,6 +215,20 @@ module _ (T : IndexedContainer) where
         → {j : I} (p : P (s • v) j)
         → Σ[ k ∈ I ] Σ[ q ∈ P s k ] (P (v q) j)
     v ψ p = v ↑ p , v ↖ p , v ↗ p
+    infixl 24 _Π•_
+    _Π•_ : ∀ {i} {s : S i}
+        (s′ : {j : I} → P s j → S j)
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        → ∀ {k} (p : P s k) → S k
+    (s′ Π• s″) {k} p = s′ p • (λ q → s″ (k , p , q))
+
+    -- s″ always appears in smooshed form, this suggests that its type
+    -- in the axioms could be refactored?
+    smoosh : ∀ {i} {s : S i}
+        {s′ : {j : I} → P s j → S j}
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        → ∀ {k} (p : P (s • s′) k) → S k
+    smoosh {s′} s″ p = s″ (s′ ψ p)
 
   record isICMS (raw : RawICMS) : Type ℓ-zero where
     open RawICMS raw
@@ -264,49 +278,61 @@ module _ (T : IndexedContainer) where
         (s : S i)
         (s′ : {j : I} → P s j → S j)
         (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
-        → s • s′ • (λ p → s″ (s′ ψ p)) ≡ s • (λ {j} p → s′ p • (λ p′ → s″ (j , p , p′)))
-     
+        → s • s′ • smoosh s″ ≡ s • (s′ Π• s″)
+
       ↑-↗↑-assoc : ∀ {i} {j} 
         (s : S i)
         (s′ : {j : I} → P s j → S j)
         (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
-        (p : P (s • s′ •  (λ p′ → s″ (s′ ψ p′))) j) 
+        (p : P (s • s′ • smoosh s″) j) 
         → let
           tr = subst (λ s → P s j) (•-assoc s s′ s″)
         in
-            (λ q → s″ (s′ ψ q)) ↑ p 
+            smoosh s″ ↑ p 
           ≡
             (λ p′ → s″
-              ( (λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↑ tr p
-              , (λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↖ tr p 
-              , p′
-              )
-            ) ↑ ((λ {k} q → s′ q • (λ p″ → s″ (k , q , p″))) ↗ tr p)
+              ( s′ Π• s″ ↑ tr p
+              , s′ Π• s″ ↖ tr p 
+              , p′)
+            ) ↑ (s′ Π• s″ ↗ tr p)
 
       ↖↑-↑-assoc : ∀ {i} {j} 
         (s : S i)
         (s′ : {j : I} → P s j → S j)
         (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
-        (p : P (s • s′ •  (λ p′ → s″ (s′ ψ p′))) j) 
+        (p : P (s • s′ •  smoosh s″) j) 
         → let
           tr = subst (λ s → P s j) (•-assoc s s′ s″)
         in
-            s′ ↑ ((λ {k} q → s″ (s′ ψ q)) ↖ p)
+            s′ ↑ (smoosh s″ ↖ p)
           ≡
-            (λ {k} q → s′ q • (λ p′ → s″ (k , q , p′))) ↑ tr p
+            s′ Π• s″ ↑ tr p
 
-      some-assoc : ∀ {i} {j} 
+      ↖↖-↖-assoc : ∀ {i} {j} 
         (s : S i)
         (s′ : {j : I} → P s j → S j)
         (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
-        (p : P (s • s′ •  (λ p′ → s″ (s′ ψ p′))) j) 
+        (p : P (s • s′ • smoosh s″) j) 
         → let
           trl = subst (P s) (↖↑-↑-assoc s s′ s″ p) 
           trr = subst (λ s → P s j) (•-assoc s s′ s″)
         in
-          trl $ s′ ↖ ((λ q → s″ (s′ ψ q)) ↖ p)
+          trl $ s′ ↖ (smoosh s″ ↖ p)
         ≡
-          (λ {k} q → s′ q • (λ p′ → s″ (k , q , p′))) ↖ trr p
+          s′ Π• s″ ↖ trr p
+
+      ↖↗-↗↖-assoc : ∀ {i} {j} 
+        (s : S i)
+        (s′ : {j : I} → P s j → S j)
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        (p : P (s • s′ • smoosh s″) j) 
+        → let
+          trl = transport
+              (λ ι → P (s′ (toPathP (↖↖-↖-assoc s s′ s″ p) ι))
+                 (↑-↗↑-assoc s s′ s″ p ι))
+          trr = subst (λ s → P s j) (•-assoc s s′ s″)
+        in trl $ s′ ↗ (smoosh s″ ↖ p)
+          ≡ (λ p′ → s″ (s′ Π• s″ ↑ trr p , s′ Π• s″ ↖ trr p , p′)) ↖ (s′ Π• s″ ↗ trr p)                                     
 
   record ICMS : Type ℓ-zero where
     field
@@ -355,10 +381,10 @@ module _ (T : IndexedContainer) where
           ( ↑-↗↑-assoc s s′ s″ p 
           , ΣPathP
             ( ΣPathP
-              ( ↖↑-↑-assoc s s′ s″ p     
+              ( ↖↑-↑-assoc s s′ s″ p
               , ΣPathP
-                ( toPathP {! !}
-                , {! !}
+                ( toPathP (↖↖-↖-assoc s s′ s″ p)
+                , toPathP {! !}
                 )
               ) , {! !}
             )

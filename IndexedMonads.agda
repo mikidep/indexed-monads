@@ -46,29 +46,29 @@ module _ where
       (implicitFunExt λ {i} → funExt ≡σ)
       (implicitFunExt λ {i} → funExt λ s → implicitFunExt λ {j} → funExtNonDep (≡π i s j))
 
-    lemma : {A B : Type} {C : B → Type} {D : A → Type}
-      (f : A → B) 
-      (h : (a : A) → C (f a) → D a)
-      (g : A → B)
-      (f≡g : f ≡ g) 
-      (k : (a : A) → C (g a) → D a)
-      (h≈k : ∀ x y → h x y ≡ k x (subst C (funExt⁻ f≡g x) y))
-      → subst (λ f → (a : A) → C (f a) → D a) f≡g h ≡ k 
-    lemma {A} {B} {C} {D} f h g =
-        J
-          (λ g f≡g → (k : (a : A) → C (g a) → D a)
-            (h≈k : ∀ x y → h x y ≡ k x (subst C (funExt⁻ f≡g x) y))
-            → subst (λ f → (a : A) → C (f a) → D a) f≡g h ≡ k) 
-        aux {g}
-      where
-      aux : (k : (a : A) → C (f a) → D a)
-        → ((x : A) (y : C (f x)) → h x y ≡ k x (subst C refl y))
-        → subst (λ f₁ → (a : A) → C (f₁ a) → D a) refl h ≡ k
-      aux k h≈k =
-        subst (_≡ k) (sym $ substRefl h) (funExt₂ h≈k′)  
-        where
-        h≈k′ : (x : A) (y : C (f x)) → h x y ≡ k x y
-        h≈k′ x y = subst (λ z → h x y ≡ k x z) (substRefl y) $ h≈k x y
+    -- lemma : {A B : Type} {C : B → Type} {D : A → Type}
+    --   (f : A → B) 
+    --   (h : (a : A) → C (f a) → D a)
+    --   (g : A → B)
+    --   (f≡g : f ≡ g) 
+    --   (k : (a : A) → C (g a) → D a)
+    --   (h≈k : ∀ x y → h x y ≡ k x (subst C (funExt⁻ f≡g x) y))
+    --   → subst (λ f → (a : A) → C (f a) → D a) f≡g h ≡ k 
+    -- lemma {A} {B} {C} {D} f h g =
+    --     J
+    --       (λ g f≡g → (k : (a : A) → C (g a) → D a)
+    --         (h≈k : ∀ x y → h x y ≡ k x (subst C (funExt⁻ f≡g x) y))
+    --         → subst (λ f → (a : A) → C (f a) → D a) f≡g h ≡ k) 
+    --     aux {g}
+    --   where
+    --   aux : (k : (a : A) → C (f a) → D a)
+    --     → ((x : A) (y : C (f x)) → h x y ≡ k x (subst C refl y))
+    --     → subst (λ f₁ → (a : A) → C (f₁ a) → D a) refl h ≡ k
+    --   aux k h≈k =
+    --     subst (_≡ k) (sym $ substRefl h) (funExt₂ h≈k′)  
+    --     where
+    --     h≈k′ : (x : A) (y : C (f x)) → h x y ≡ k x y
+    --     h≈k′ x y = subst (λ z → h x y ≡ k x z) (substRefl y) $ h≈k x y
 
     ⇒PathP-ext′ :
       (≡σ : ∀ {i} (s : F .S i) → α .σ s ≡ β .σ s)
@@ -252,7 +252,7 @@ module _ (T : IndexedContainer) where
             tr $ P-e-idx ((λ {j} _ → e j) ↗ p) ≡ refl
 
       e-unit-r : ∀ {i} (ss : ∀ {j} → i ≡ j → S j)
-        → e i • (λ {j} p → ss (P-e-idx p)) ≡ ss refl 
+        → e i • (λ p → ss (P-e-idx p)) ≡ ss refl 
       ↑-unit-r : ∀ {i} (ss : ∀ {j} → i ≡ j → S j) {j}
         → (p : P (e i • (λ p → ss (P-e-idx p))) j)
         → (λ p′ → ss (P-e-idx p′)) ↑ p ≡ i
@@ -268,11 +268,10 @@ module _ (T : IndexedContainer) where
             -- What exactly is this?
             -- Looks like a subst (P _ j) (cong₂ something something) with
             -- an implicit first argument but I don't feel like refactoring it
-            tr₁ : P (ss (P-e-idx ((λ p′ → ss (P-e-idx p′)) ↖ p))) j → P (ss refl) j
-            tr₁ = transport (λ ι → P (ss (toPathP (↖-unit-r ss p) ι)) j)
+            tr₁ = transport (λ ι → P (ss (toPathP {A = λ κ → i ≡ ↑-unit-r ss p κ} (↖-unit-r ss p) ι)) j)
             tr₂ = subst (λ s → P s j) (e-unit-r ss)
           in
-            tr₁ $ (λ p′ → ss (P-e-idx p′)) ↗ p ≡ tr₂ $ p
+            tr₁ $ (λ p′ → ss (P-e-idx p′)) ↗ p ≡ tr₂ p
 
       •-assoc : ∀ {i} 
         (s : S i)
@@ -328,11 +327,31 @@ module _ (T : IndexedContainer) where
         (p : P (s • s′ • smoosh s″) j) 
         → let
           trl = transport
-              (λ ι → P (s′ (toPathP (↖↖-↖-assoc s s′ s″ p) ι))
+              (λ ι → P (s′ (toPathP {A = λ κ → P s (↖↑-↑-assoc s s′ s″ p κ)} (↖↖-↖-assoc s s′ s″ p) ι))
                  (↑-↗↑-assoc s s′ s″ p ι))
           trr = subst (λ s → P s j) (•-assoc s s′ s″)
         in trl $ s′ ↗ (smoosh s″ ↖ p)
           ≡ (λ p′ → s″ (s′ Π• s″ ↑ trr p , s′ Π• s″ ↖ trr p , p′)) ↖ (s′ Π• s″ ↗ trr p)                                     
+
+      ↗-↗↗-assoc : ∀ {i} {j} 
+        (s : S i)
+        (s′ : {j : I} → P s j → S j)
+        (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
+        (p : P (s • s′ • smoosh s″) j)
+        → let
+          trl = transport (λ ι →
+               P (s″ (ΣPathP {B = λ ι k → Σ (P s k) λ q → P (s′ q) (↑-↗↑-assoc s s′ s″ p ι)} 
+                  ( ↖↑-↑-assoc s s′ s″ p
+                  , ΣPathP 
+                    ( toPathP (↖↖-↖-assoc s s′ s″ p) 
+                    , toPathP (↖↗-↗↖-assoc s s′ s″ p)
+                    )
+                  ) ι)) j)
+          trr = subst (λ s → P s j) (•-assoc s s′ s″)
+            in
+               trl $ smoosh s″ ↗ p
+            ≡
+              (λ p′ → s″ (((s′ Π• s″) ↑ trr p) , ((s′ Π• s″) ↖ trr p) , p′)) ↗ ((s′ Π• s″) ↗ trr p)
 
   record ICMS : Type ℓ-zero where
     field
@@ -384,9 +403,10 @@ module _ (T : IndexedContainer) where
               ( ↖↑-↑-assoc s s′ s″ p
               , ΣPathP
                 ( toPathP (↖↖-↖-assoc s s′ s″ p)
-                , toPathP {! !}
+                , toPathP (↖↗-↗↖-assoc s s′ s″ p)
                 )
-              ) , {! !}
+              )
+            , toPathP (↗-↗↗-assoc s s′ s″ p)
             )
           )
         }
@@ -404,3 +424,4 @@ module _ (T : IndexedContainer) where
     --  in k , p′
     -- RawICMonoid→ICMS ._↗_ {s} v {j} p = μ .π (s , curry v) j p .snd .snd
     -- RawICMonoid→ICMS .P-e-idx {j} p = η .π _ j p
+    --

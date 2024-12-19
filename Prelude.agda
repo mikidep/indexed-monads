@@ -17,3 +17,13 @@ infix 4 ≡[-]-syntax
 infixr 5 _$_
 _$_ : {ℓ ℓ' : _} {A : Type ℓ} {B : Type ℓ'} → (A → B) → A → B
 f $ x = f x
+
+module _
+  {ℓ ℓ' ℓ'' : Level}
+  {A : Type ℓ}
+  {B : A → Type ℓ'}
+  {C : (a : A) → B a → Type ℓ''} where
+
+  infixl 9 _»_
+  _»_ : (f : (a : A) → B a) → (g : {a : A} → (b : B a) → C a b) → (a : A) → C a (f a)
+  _»_ f g x = g (f x) 

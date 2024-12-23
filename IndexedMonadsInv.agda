@@ -16,12 +16,12 @@ module _
 
   open IndexedContainer T
 
-  record RawICMonoid : Type (ℓ-suc ℓ-zero) where
+  record RawICMonoid : Type where
     field
       η : idᶜ ⇒ T
       μ : (T ²) ⇒ T
 
-  record isICMonoid (raw : RawICMonoid) : Type (ℓ-suc ℓ-zero) where
+  record isICMonoid (raw : RawICMonoid) : Type where
     open RawICMonoid raw
     field
       η-unit-l : unitor-l-inv ; (η ⊗₁ id₁ T) ; μ ≡ id₁ T
@@ -72,7 +72,7 @@ module _
         → {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j
     curry″ s″ k p q = s″ (k , p , q)
 
-  record isICMS (raw : RawICMS) : Type ℓ-zero where
+  record isICMS (raw : RawICMS) : Type where
     open RawICMS raw
     field
       e-unit-l : ∀ {i} (s : S i)
@@ -86,6 +86,7 @@ module _
 
       e-unit-r : ∀ {i} (s : S i)
         → e i • (λ p → subst S (P-e-idx p) s) ≡ s
+
   --     -- new
   --     ↑-unit-l : ∀ {i} {s : S i} {j}
   --       → (p : P (s • (λ {j} _ → e j)) j)  
@@ -215,7 +216,7 @@ module _
   --           ≡
   --             s″ ((s′ Π• s″) ↑ trr p) ((s′ Π• s″) ↖ trr p) ↗ ((s′ Π• s″) ↗ trr p)
 
-  record ICMS : Type ℓ-zero where
+  record ICMS : Type where
     field
       icms : RawICMS
       is-icms : isICMS icms
@@ -243,10 +244,21 @@ module _
         (implicitFunExt λ {j} →
           funExtNonDepHet (↖-unit-l s) 
         )
-      isICMS→isICMonoid .η-unit-r = ⇒PathP λ s → Π⇒PathP
+      isICMS→isICMonoid .η-unit-r = ⇒PathP λ {i} s → Π⇒PathP
         (e-unit-r s)
         (implicitFunExt λ {j} →
-          funExtNonDepHet {! !} 
+          funExtNonDepHet λ p → idfun
+            ( transport refl
+              (transp (λ i₁ → P (transp (λ _ → S i) i₁ s) j) i0
+                (transp (λ j₁ → P
+                  (transp (λ i₁ → S (P-e-idx ((λ q → subst S (P-e-idx q) s) ↖ p) (~ j₁ ∧ i₁))) i0 s)
+                  j
+                )
+                i0 ((λ q → subst S (P-e-idx q) s) ↗ p))
+              )
+              ≡ substP T (e-unit-r s) p
+            )
+            {! !} 
         )
       isICMS→isICMonoid .μ-assoc = {! !}
   --     isICMS→isICMonoid .η-unit-l = ⇒PathP-ext′
@@ -285,23 +297,30 @@ module _
   --           )
   --         )
   --       }
-  --
-  -- module _ (icmon : RawICMonoid) where
-  --   open RawICMS
-  --   open RawICMonoid icmon
-  --
-  --   RawICMonoid→RawICMS : RawICMS
-  --   RawICMonoid→RawICMS .e i = η .σ _
-  --   RawICMonoid→RawICMS ._•_ s v = μ .σ (s , v)
-  --   RawICMonoid→RawICMS ._↑_ {s} v p = μ .π (s , v) p .fst
-  --   RawICMonoid→RawICMS ._↖_ {s} v p = μ .π (s , v) p .snd .fst
-  --   RawICMonoid→RawICMS ._↗_ {s} v p = μ .π (s , v) p .snd .snd
-  --   RawICMonoid→RawICMS .P-e-idx p = η .π _ p
-  --
-  --   module _ (is-icmon : isICMonoid icmon) where
-  --     open isICMS
-  --     open isICMonoid is-icmon
-  --
+
+  module _ (icmon : RawICMonoid) where
+    open RawICMS
+    open RawICMonoid icmon
+
+    RawICMonoid→RawICMS : RawICMS
+    RawICMonoid→RawICMS .e i = η i _ .σs
+    RawICMonoid→RawICMS .P-e-idx {i} p = η i _ .πs p
+    RawICMonoid→RawICMS ._•_ {i} s v = μ i (s , v) .σs
+    RawICMonoid→RawICMS ._↑_ {i} {s} v p = μ i (s , v) .πs p .fst
+    RawICMonoid→RawICMS ._↖_ {i} {s} v p = μ i (s , v) .πs p .snd .fst
+    RawICMonoid→RawICMS ._↗_ {i} {s} v p = μ i (s , v) .πs p .snd .snd
+
+    module _ (is-icmon : isICMonoid icmon) where
+      open import Cubical.Functions.FunExtEquiv using (funExtDep⁻)
+
+      open isICMS
+      open isICMonoid is-icmon
+
+      isICMonoid→isICMS : isICMS RawICMonoid→RawICMS
+      isICMonoid→isICMS .e-unit-l s = σs≡ η-unit-l s
+      isICMonoid→isICMS .↖-unit-l s p = funExtNonDepHet⁻ (πs≡ η-unit-l s) p
+      isICMonoid→isICMS .e-unit-r s = σs≡ η-unit-r s
+
   --     isICMonoid→isICMS : isICMS RawICMonoid→RawICMS
   --     isICMonoid→isICMS .e-unit-l s = σ≡ η-unit-l (s , _)
   --     isICMonoid→isICMS .↑-unit-l {s} p = 

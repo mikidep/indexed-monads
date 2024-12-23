@@ -18,7 +18,7 @@ module _ where
     → F .P s j → F .P s′ j
   substP F {j = j} = subst (λ s → F .P s j)
 
-  record _Π⇒_ (F G : IndexedContainer) {i : I} (s : F .S i) : Type₁ where
+  record _Π⇒_ (F G : IndexedContainer) {i : I} (s : F .S i) : Type where
     field
       σs : G .S i
       πs : ∀ {j} → G .P σs j → F .P s j
@@ -28,12 +28,12 @@ module _ where
   module _ {F G : IndexedContainer} {i : I} {s : F .S i} {α β : (F Π⇒ G) s} where
     Π⇒PathP : 
       (≡σs : α .σs ≡ β .σs)
-      (≡πs : PathP {ℓ-zero} (λ ι → ∀ {j} → G .P (≡σs ι) j → F .P s j) (λ {j} → α .πs {j}) (β .πs))
+      (≡πs : PathP {ℓ-zero} (λ ι → ∀ {j} → G .P (≡σs ι) j → F .P s j) (α .πs) (β .πs))
       → α ≡ β
     Π⇒PathP ≡σs ≡πs ι .σs = ≡σs ι
     Π⇒PathP ≡σs ≡πs ι .πs = ≡πs ι
 
-  _⇒_ : (F G : IndexedContainer) → Type₁
+  _⇒_ : (F G : IndexedContainer) → Type
   F ⇒ G = (i : I) (s : F .S i) → (F Π⇒ G) s
 
   module _ {F G : IndexedContainer} {α β : F ⇒ G} where
@@ -41,6 +41,14 @@ module _ where
       (Π≡ : {i : I} (s : F .S i) → α i s ≡ β i s)
       → α ≡ β
     ⇒PathP Π≡ ι i s = Π≡ s ι
+
+  module _ {F G : IndexedContainer} {α β : F ⇒ G} (α≡β : α ≡ β) where
+    σs≡ : {i : I} (s : F .S i) → α i s .σs ≡ β i s .σs
+    σs≡ s ι = α≡β ι _ s .σs
+
+    πs≡ : {i : I} (s : F .S i) {j : I}
+      → PathP {ℓ-zero} (λ ι → G .P (σs≡ s ι) j → F .P s j) (α i s .πs) (β i s .πs)
+    πs≡ s ι = α≡β ι _ s .πs
 
   idᶜ : IndexedContainer
   idᶜ .S _ = Unit
@@ -124,7 +132,7 @@ module _ {F G H : IndexedContainer} where
 
 
 module _ {F G} (α : F ⇒ G) where
-  record ⇒isIso : Type₁ where
+  record ⇒isIso : Type where
     field
       inv : G ⇒ F
       inv-l : Path (F ⇒ F) (α ; inv) (id₁ F)

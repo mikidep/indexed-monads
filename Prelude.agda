@@ -33,7 +33,16 @@ funExtNonDepHet : {ℓ ℓ′ : Level}
   {f : A i0 → B i0} {g : A i1 → B i1}
   → ((x : A i0) → PathP B (f x) (g (transport (λ ι → A ι) x)))
   → PathP (λ i → A i → B i) f g
-funExtNonDepHet {A = A} {B} {f} {g} hom = funExtDep (invEq (heteroHomotopy≃Homotopy {g = g}) hom)
+funExtNonDepHet {A = A} {B} {f} {g} = invEq (heteroHomotopy≃Homotopy {g = g}) » funExtDep
   where
   open import Cubical.Foundations.Equiv using (invEq)
   open import Cubical.Functions.FunExtEquiv using (funExtDep; heteroHomotopy≃Homotopy)
+
+funExtNonDepHet⁻ : {ℓ ℓ′ : Level}
+  {A : I → Type ℓ} {B : (i : I) → Type ℓ′}
+  {f : A i0 → B i0} {g : A i1 → B i1}
+  → PathP (λ i → A i → B i) f g
+  → ((x : A i0) → PathP B (f x) (g (transport (λ ι → A ι) x)))
+funExtNonDepHet⁻ {A = A} {B} {f} {g} = funExtDep⁻ » fst (heteroHomotopy≃Homotopy {g = g})
+  where
+  open import Cubical.Functions.FunExtEquiv using (funExtDep⁻; heteroHomotopy≃Homotopy)

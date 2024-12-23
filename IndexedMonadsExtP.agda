@@ -4,7 +4,7 @@ open import Cubical.Data.Unit
 open import Cubical.Data.Sigma
 open import Cubical.Foundations.Function using (idfun; curry; uncurry; _∘_)
 
-module IndexedMonads (I : Type) where
+module IndexedMonadsExtP (I : Type) where
 
 open import IndexedContainer I
 
@@ -220,46 +220,76 @@ module _
     open isICMonoid
 
     module _ (is-icms : isICMS icms) where
+      open import Cubical.Functions.FunExtEquiv using (funExtNonDep)
+
       open isICMS is-icms
 
       isICMS→isICMonoid : isICMonoid RawICMS→RawICMonoid
-      isICMS→isICMonoid .η-unit-l = ⇒PathP-ext′
-        (λ { (s , v) → e-unit-l s })
-        λ { (s , v) p → ΣPathP
-          ( ↑-unit-l p
-          , ΣPathP 
-            ( toPathP (↖-unit-l p)
-            , toPathP (↗-unit-l p)
-            )
-          )
-        }
-      isICMS→isICMonoid .η-unit-r = ⇒PathP-ext′
-        (λ { (_ , ss) → e-unit-r ss })
-        λ { (_ , ss) p → ΣPathP
-          ( ↑-unit-r ss p
-          , ΣPathP
-            ( toPathP (↖-unit-r ss p)
-            , toPathP (↗-unit-r ss p)
-            )
-          )
-        }
-      isICMS→isICMonoid .μ-assoc = ⇒PathP-ext′
-        (λ { ((s , s′) , s″) → •-assoc s s′ (curry″ s″) })
-        λ { ((s , s′) , s″) p → ΣPathP
-          ( ↑-↗↑-assoc s s′ (curry″ s″) p 
-          , ΣPathP
-            ( ΣPathP
-              ( ↖↑-↑-assoc s s′ (curry″ s″) p
-              , ΣPathP
-                ( toPathP (↖↖-↖-assoc s s′ (curry″ s″) p)
-                , toPathP (↖↗-↗↖-assoc s s′ (curry″ s″) p)
-                )
+      isICMS→isICMonoid .η-unit-l = ⇒PathP-extP
+        (λ (s , _) → e-unit-l s)
+        -- ————————————————————————————————————————————————————————————
+        -- Goal: PathP
+        -- (λ ι → P (e-unit-l s ι) j → Σ I (λ j₁ → Σ (P s j₁) (λ p → j₁ ≡ j)))
+        -- (λ p →
+        --    ((λ {j = j₁} Ksp → e j₁) ↑ p) ,
+        --    ((λ {j = j₁} Ksp → e j₁) ↖ p) ,
+        --    P-e-idx ((λ {j = j₁} Ksp → e j₁) ↗ p))
+        -- (λ p → j , p , (λ _ → j))
+        -- ————————————————————————————————————————————————————————————
+        λ { (s , _) {j} →
+          J
+            ( λ s′ s•e≡s′ → PathP
+              (λ ι → P (s•e≡s′ ι) j → Σ I (λ k → Σ (P s′ k) (λ p → k ≡ j)))
+              (λ p →
+                  ((λ {j} _ → e j) ↑ p)
+                , ((λ {j} _ → e j) ↖ p)
+                , P-e-idx ((λ {j} _ → e j) ↗ p)
               )
-            , toPathP (↗-↗↗-assoc s s′ (curry″ s″) p)
+              {!(λ p′ → j , p′ , refl) !}
             )
-          )
+            {! !}
+            (e-unit-l s)
         }
+      isICMS→isICMonoid .η-unit-r = {! !}
+      isICMS→isICMonoid .μ-assoc = {! !}
 
+      -- isICMS→isICMonoid .η-unit-l = ⇒PathP-ext′
+      --   (λ { (s , v) → e-unit-l s })
+      --   λ { (s , v) p → ΣPathP
+      --     ( ↑-unit-l p
+      --     , ΣPathP 
+      --       ( toPathP (↖-unit-l p)
+      --       , toPathP (↗-unit-l p)
+      --       )
+      --     )
+      --   }
+      -- isICMS→isICMonoid .η-unit-r = ⇒PathP-ext′
+      --   (λ { (_ , ss) → e-unit-r ss })
+      --   λ { (_ , ss) p → ΣPathP
+      --     ( ↑-unit-r ss p
+      --     , ΣPathP
+      --       ( toPathP (↖-unit-r ss p)
+      --       , toPathP (↗-unit-r ss p)
+      --       )
+      --     )
+      --   }
+      -- isICMS→isICMonoid .μ-assoc = ⇒PathP-ext′
+      --   (λ { ((s , s′) , s″) → •-assoc s s′ (curry″ s″) })
+      --   λ { ((s , s′) , s″) p → ΣPathP
+      --     ( ↑-↗↑-assoc s s′ (curry″ s″) p 
+      --     , ΣPathP
+      --       ( ΣPathP
+      --         ( ↖↑-↑-assoc s s′ (curry″ s″) p
+      --         , ΣPathP
+      --           ( toPathP (↖↖-↖-assoc s s′ (curry″ s″) p)
+      --           , toPathP (↖↗-↗↖-assoc s s′ (curry″ s″) p)
+      --           )
+      --         )
+      --       , toPathP (↗-↗↗-assoc s s′ (curry″ s″) p)
+      --       )
+      --     )
+      --   }
+      --
   module _ (icmon : RawICMonoid) where
     open RawICMS
     open RawICMonoid icmon

@@ -4,7 +4,7 @@ open import Cubical.Data.Unit
 open import Cubical.Data.Sigma
 open import Cubical.Foundations.Function using (idfun; curry; uncurry; _∘_)
 
-module IndexedMonads (I : Type) where
+module IndexedMonadsΣICMS (I : Type) where
 
 open import IndexedContainer I
 
@@ -67,6 +67,33 @@ module _
         (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
         → {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j
     curry″ s″ k p q = s″ (k , p , q)
+  
+  record T²S (i : I) : Type ℓ-zero where
+    constructor T²S⟨_,_⟩
+    field
+      s : S i
+      v : ∀ {j} (p : P s j) → S j
+
+  infix 6 T²S⟨_,_⟩
+
+  record T²P {i} (sv : T²S i) (j : I) : Type ℓ-zero where
+    constructor T²P⟨_,_,_⟩
+    open T²S sv
+    field
+      k : I
+      p : P s k
+      q : P (v p) j 
+
+  infix 7 T²P⟨_,_,_⟩
+
+  record RawICMS′ : Type ℓ-zero where
+    field
+      e  : ∀ i → S i
+      m : ∀ {i}
+        → (sv : T²S i) → S i
+      ψ : ∀ {i} {sv : T²S i} {j}
+        → (p : P (m sv) j) → T²P sv j
+      P-e-idx : ∀ {i} {j} → P (e i) j → i ≡ j
 
   record isICMS (raw : RawICMS) : Type ℓ-zero where
     open RawICMS raw
@@ -202,151 +229,165 @@ module _
             ≡
               s″ ((s′ Π• s″) ↑ trr p) ((s′ Π• s″) ↖ trr p) ↗ ((s′ Π• s″) ↗ trr p)
 
+  record isICMS′ (raw : RawICMS′) : Type ℓ-zero where
+    open RawICMS′ raw
+    field
+      e-unit-l : ∀ {i} (s : S i)
+        → m T²S⟨ s , (λ {j} _ → e j)⟩ ≡ s
+
+      ψ-unit-l : ∀ {i} {s : S i} {j}
+        → (p : P (m T²S⟨ s , (λ {j} _ → e j)⟩) j)
+        → let
+            tr = subst
+              (λ s → T²P T²S⟨ s , (λ {j} _ → e j)⟩ j)
+              (e-unit-l s)
+          in ψ p ≡ tr T²P⟨ j , p , {!  !} ⟩ 
+
   record ICMS : Type ℓ-zero where
     field
       icms : RawICMS
       is-icms : isICMS icms
 
-  module _ (icms : RawICMS) where
-    open RawICMS icms
-    open RawICMonoid
-
-    RawICMS→RawICMonoid : RawICMonoid
-    RawICMS→RawICMonoid .η .σ {i} _ = e i
-    RawICMS→RawICMonoid .η .π _ p = P-e-idx p
-    RawICMS→RawICMonoid .μ .σ (s , v) = s • v
-    RawICMS→RawICMonoid .μ .π (s , v) p = v ↑ p , v ↖ p , v ↗ p
-
-    open isICMonoid
-
-    module _ (is-icms : isICMS icms) where
-      open isICMS is-icms
-
-      isICMS→isICMonoid : isICMonoid RawICMS→RawICMonoid
-      isICMS→isICMonoid .η-unit-l = ⇒PathP-ext′
-        (λ { (s , v) → e-unit-l s })
-        λ { (s , v) p → ΣPathP
-          ( ↑-unit-l p
-          , ΣPathP 
-            ( toPathP (↖-unit-l p)
-            , toPathP (↗-unit-l p)
-            )
-          )
-        }
-      isICMS→isICMonoid .η-unit-r = ⇒PathP-ext′
-        (λ { (_ , ss) → e-unit-r ss })
-        λ { (_ , ss) p → ΣPathP
-          ( ↑-unit-r ss p
-          , ΣPathP
-            ( toPathP (↖-unit-r ss p)
-            , toPathP (↗-unit-r ss p)
-            )
-          )
-        }
-      isICMS→isICMonoid .μ-assoc = ⇒PathP-ext′
-        (λ { ((s , s′) , s″) → •-assoc s s′ (curry″ s″) })
-        λ { ((s , s′) , s″) p → ΣPathP
-          ( ↑-↗↑-assoc s s′ (curry″ s″) p 
-          , ΣPathP
-            ( ΣPathP
-              ( ↖↑-↑-assoc s s′ (curry″ s″) p
-              , ΣPathP
-                ( toPathP (↖↖-↖-assoc s s′ (curry″ s″) p)
-                , toPathP (↖↗-↗↖-assoc s s′ (curry″ s″) p)
-                )
-              )
-            , toPathP (↗-↗↗-assoc s s′ (curry″ s″) p)
-            )
-          )
-        }
-
-  module _ (icmon : RawICMonoid) where
-    open RawICMS
-    open RawICMonoid icmon
-
-    RawICMonoid→RawICMS : RawICMS
-    RawICMonoid→RawICMS .e i = η .σ _
-    RawICMonoid→RawICMS ._•_ s v = μ .σ (s , v)
-    RawICMonoid→RawICMS ._↑_ {s} v p = μ .π (s , v) p .fst
-    RawICMonoid→RawICMS ._↖_ {s} v p = μ .π (s , v) p .snd .fst
-    RawICMonoid→RawICMS ._↗_ {s} v p = μ .π (s , v) p .snd .snd
-    RawICMonoid→RawICMS .P-e-idx p = η .π _ p
-
-    module _ (is-icmon : isICMonoid icmon) where
-      open isICMS
-      open isICMonoid is-icmon
-
-      isICMonoid→isICMS : isICMS RawICMonoid→RawICMS
-      isICMonoid→isICMS .e-unit-l s = σ≡ η-unit-l (s , _)
-      isICMonoid→isICMS .↑-unit-l {s} p = 
-        let
-          Σeq = π≡ η-unit-l (s , _) p
-        in cong fst Σeq
-      isICMonoid→isICMS .↖-unit-l {s} p =
-        let
-          Σeq = π≡ η-unit-l (s , _) p
-        in fromPathP $ cong (snd » fst) Σeq
-      isICMonoid→isICMS .↗-unit-l {s} p =
-        let
-          Σeq = π≡ η-unit-l (s , _) p
-        in fromPathP $ cong (snd » snd) Σeq
-      isICMonoid→isICMS .e-unit-r {i} ss = σ≡ η-unit-r (_ , ss)
-      isICMonoid→isICMS .↑-unit-r ss p =
-        let
-          Σeq = π≡ η-unit-r (_ , ss) p
-        in cong fst Σeq
-      isICMonoid→isICMS .↖-unit-r ss p = 
-        let
-          Σeq = π≡ η-unit-r (_ , ss) p
-        in fromPathP $ cong (snd » fst) Σeq
-      isICMonoid→isICMS .↗-unit-r {i = i} ss {j = j} p = 
-        let
-          Σeq = π≡ η-unit-r (_ , ss) p
-          xx = cong (snd » snd) Σeq
-          retraction : toPathP (fromPathP (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)) ≡ (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)
-          retraction = PathPIsoPath (λ κ → i ≡ cong fst Σeq κ) _ _ .Iso.leftInv (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)
-          -- tr = subst
-          --     ( λ x → transport
-          --         (λ ι → P (ss x) j) ?
-          --       ≡ ?
-          --     ) (sym retraction)
-        in idfun
-          ( transport
-              (λ ι → P (ss (toPathP {A = λ κ → i ≡ cong fst Σeq κ} (fromPathP (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)) ι)) j) $
-                μ .π (η .σ tt , (λ p′ → ss (η .π tt p′))) p .snd .snd
-            ≡ substP T (σ≡ η-unit-r (tt , ss)) p
-          )
-          {! PathPIsoPath (λ κ → i ≡ cong fst Σeq κ) _ _ .Iso.leftInv !}
-        where
-          open import Cubical.Foundations.Path
-          open import Cubical.Foundations.Isomorphism
-        -- ————————————————————————————————————————————————————————————
-        -- Goal: PathP
-        -- (λ ι → P (ss
-        --     (toPathP
-        --      (fromPathP $
-        --       (λ i₁ →
-        --          ((λ r → snd r) » (λ r → fst r)) (π≡ η-unit-r (tt , ss) p i₁)))
-        --      ι))
-        --    j)
-        -- (μ .π (η .σ tt , (λ p′ → ss (η .π tt p′))) p .snd .snd)
-        -- (substP T (σ≡ η-unit-r (tt , ss)) p)
-        -- ————————————————————————————————————————————————————————————
-        -- Have: PathP
-        -- (λ ɩ → P (ss (
-        --    ((funExtNonDep⁻ $ (λ κ → η-unit-r κ .π (tt , ss)))
-        --     (toPathP refl)
-        --     ɩ)
-        --    .snd .fst))
-        --  j)
-        --   (μ .π (η .σ tt , (λ Ksp → id₁ .σ (ss (η .π tt Ksp)) )) p)
-        --   (substP T (λ ɩ → η-unit-r ɩ .σ (tt , ss)) p)
-        -- ————————————————————————————————————————————————————————————
-
-      -- isICMonoid→isICMS .•-assoc = {! !}
-      -- isICMonoid→isICMS .↑-↗↑-assoc = {! !}
-      -- isICMonoid→isICMS .↖↑-↑-assoc = {! !}
-      -- isICMonoid→isICMS .↖↖-↖-assoc = {! !}
-      -- isICMonoid→isICMS .↖↗-↗↖-assoc = {! !}
-      -- isICMonoid→isICMS .↗-↗↗-assoc = {! !}
-      --
+  -- module _ (icms : RawICMS) where
+  --   open RawICMS icms
+  --   open RawICMonoid
+  --
+  --   RawICMS→RawICMonoid : RawICMonoid
+  --   RawICMS→RawICMonoid .η .σ {i} _ = e i
+  --   RawICMS→RawICMonoid .η .π _ p = P-e-idx p
+  --   RawICMS→RawICMonoid .μ .σ (s , v) = s • v
+  --   RawICMS→RawICMonoid .μ .π (s , v) p = v ↑ p , v ↖ p , v ↗ p
+  --
+  --   open isICMonoid
+  --
+  --   module _ (is-icms : isICMS icms) where
+  --     open isICMS is-icms
+  --
+  --     isICMS→isICMonoid : isICMonoid RawICMS→RawICMonoid
+  --     isICMS→isICMonoid .η-unit-l = ⇒PathP-ext′
+  --       (λ { (s , v) → e-unit-l s })
+  --       λ { (s , v) p → ΣPathP
+  --         ( ↑-unit-l p
+  --         , ΣPathP 
+  --           ( toPathP (↖-unit-l p)
+  --           , toPathP (↗-unit-l p)
+  --           )
+  --         )
+  --       }
+  --     isICMS→isICMonoid .η-unit-r = ⇒PathP-ext′
+  --       (λ { (_ , ss) → e-unit-r ss })
+  --       λ { (_ , ss) p → ΣPathP
+  --         ( ↑-unit-r ss p
+  --         , ΣPathP
+  --           ( toPathP (↖-unit-r ss p)
+  --           , toPathP (↗-unit-r ss p)
+  --           )
+  --         )
+  --       }
+  --     isICMS→isICMonoid .μ-assoc = ⇒PathP-ext′
+  --       (λ { ((s , s′) , s″) → •-assoc s s′ (curry″ s″) })
+  --       λ { ((s , s′) , s″) p → ΣPathP
+  --         ( ↑-↗↑-assoc s s′ (curry″ s″) p 
+  --         , ΣPathP
+  --           ( ΣPathP
+  --             ( ↖↑-↑-assoc s s′ (curry″ s″) p
+  --             , ΣPathP
+  --               ( toPathP (↖↖-↖-assoc s s′ (curry″ s″) p)
+  --               , toPathP (↖↗-↗↖-assoc s s′ (curry″ s″) p)
+  --               )
+  --             )
+  --           , toPathP (↗-↗↗-assoc s s′ (curry″ s″) p)
+  --           )
+  --         )
+  --       }
+  --
+  -- module _ (icmon : RawICMonoid) where
+  --   open RawICMS
+  --   open RawICMonoid icmon
+  --
+  --   RawICMonoid→RawICMS : RawICMS
+  --   RawICMonoid→RawICMS .e i = η .σ _
+  --   RawICMonoid→RawICMS ._•_ s v = μ .σ (s , v)
+  --   RawICMonoid→RawICMS ._↑_ {s} v p = μ .π (s , v) p .fst
+  --   RawICMonoid→RawICMS ._↖_ {s} v p = μ .π (s , v) p .snd .fst
+  --   RawICMonoid→RawICMS ._↗_ {s} v p = μ .π (s , v) p .snd .snd
+  --   RawICMonoid→RawICMS .P-e-idx p = η .π _ p
+  --
+  --   module _ (is-icmon : isICMonoid icmon) where
+  --     open isICMS
+  --     open isICMonoid is-icmon
+  --
+  --     isICMonoid→isICMS : isICMS RawICMonoid→RawICMS
+  --     isICMonoid→isICMS .e-unit-l s = σ≡ η-unit-l (s , _)
+  --     isICMonoid→isICMS .↑-unit-l {s} p = 
+  --       let
+  --         Σeq = π≡ η-unit-l (s , _) p
+  --       in cong fst Σeq
+  --     isICMonoid→isICMS .↖-unit-l {s} p =
+  --       let
+  --         Σeq = π≡ η-unit-l (s , _) p
+  --       in fromPathP $ cong (snd » fst) Σeq
+  --     isICMonoid→isICMS .↗-unit-l {s} p =
+  --       let
+  --         Σeq = π≡ η-unit-l (s , _) p
+  --       in fromPathP $ cong (snd » snd) Σeq
+  --     isICMonoid→isICMS .e-unit-r {i} ss = σ≡ η-unit-r (_ , ss)
+  --     isICMonoid→isICMS .↑-unit-r ss p =
+  --       let
+  --         Σeq = π≡ η-unit-r (_ , ss) p
+  --       in cong fst Σeq
+  --     isICMonoid→isICMS .↖-unit-r ss p = 
+  --       let
+  --         Σeq = π≡ η-unit-r (_ , ss) p
+  --       in fromPathP $ cong (snd » fst) Σeq
+  --     isICMonoid→isICMS .↗-unit-r {i = i} ss {j = j} p = 
+  --       let
+  --         Σeq = π≡ η-unit-r (_ , ss) p
+  --         xx = cong (snd » snd) Σeq
+  --         retraction : toPathP (fromPathP (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)) ≡ (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)
+  --         retraction = PathPIsoPath (λ κ → i ≡ cong fst Σeq κ) _ _ .Iso.leftInv (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)
+  --         -- tr = subst
+  --         --     ( λ x → transport
+  --         --         (λ ι → P (ss x) j) ?
+  --         --       ≡ ?
+  --         --     ) (sym retraction)
+  --       in idfun
+  --         ( transport
+  --             (λ ι → P (ss (toPathP {A = λ κ → i ≡ cong fst Σeq κ} (fromPathP (λ κ → π≡ η-unit-r (tt , ss) p κ .snd .fst)) ι)) j) $
+  --               μ .π (η .σ tt , (λ p′ → ss (η .π tt p′))) p .snd .snd
+  --           ≡ substP T (σ≡ η-unit-r (tt , ss)) p
+  --         )
+  --         {! PathPIsoPath (λ κ → i ≡ cong fst Σeq κ) _ _ .Iso.leftInv !}
+  --       where
+  --         open import Cubical.Foundations.Path
+  --         open import Cubical.Foundations.Isomorphism
+  --       -- ————————————————————————————————————————————————————————————
+  --       -- Goal: PathP
+  --       -- (λ ι → P (ss
+  --       --     (toPathP
+  --       --      (fromPathP $
+  --       --       (λ i₁ →
+  --       --          ((λ r → snd r) » (λ r → fst r)) (π≡ η-unit-r (tt , ss) p i₁)))
+  --       --      ι))
+  --       --    j)
+  --       -- (μ .π (η .σ tt , (λ p′ → ss (η .π tt p′))) p .snd .snd)
+  --       -- (substP T (σ≡ η-unit-r (tt , ss)) p)
+  --       -- ————————————————————————————————————————————————————————————
+  --       -- Have: PathP
+  --       -- (λ ɩ → P (ss (
+  --       --    ((funExtNonDep⁻ $ (λ κ → η-unit-r κ .π (tt , ss)))
+  --       --     (toPathP refl)
+  --       --     ɩ)
+  --       --    .snd .fst))
+  --       --  j)
+  --       --   (μ .π (η .σ tt , (λ Ksp → id₁ .σ (ss (η .π tt Ksp)) )) p)
+  --       --   (substP T (λ ɩ → η-unit-r ɩ .σ (tt , ss)) p)
+  --       -- ————————————————————————————————————————————————————————————
+  --
+  --     -- isICMonoid→isICMS .•-assoc = {! !}
+  --     -- isICMonoid→isICMS .↑-↗↑-assoc = {! !}
+  --     -- isICMonoid→isICMS .↖↑-↑-assoc = {! !}
+  --     -- isICMonoid→isICMS .↖↖-↖-assoc = {! !}
+  --     -- isICMonoid→isICMS .↖↗-↗↖-assoc = {! !}
+  --     -- isICMonoid→isICMS .↗-↗↗-assoc = {! !}
+  --     --

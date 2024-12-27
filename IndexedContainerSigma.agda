@@ -64,52 +64,14 @@ module _ where
     ⟦_⟧ X i = Σ[ s ∈ F .S i ] (∀ {j} (p : F .P s j) → X j)
 
   module _ (F : IndexedContainer) where
-    _⟨$⟩_ : {X Y : I → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ F ⟧ X i → ⟦ F ⟧ Y i)
-    _⟨$⟩_ f i (s , v) .fst = s
-    _⟨$⟩_ f i (s , v) .snd {j} p = f j (v p)
+    _⟦$⟧_ : {X Y : I → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ F ⟧ X i → ⟦ F ⟧ Y i)
+    _⟦$⟧_ f i (s , v) .fst = s
+    _⟦$⟧_ f i (s , v) .snd {j} p = f j (v p)
 
   module _ (F G : IndexedContainer) where
     _⊗_ : IndexedContainer
     _⊗_ .S = ⟦ G ⟧ (F .S) 
     _⊗_ .P (s , v) k = Σ[ j ∈ I ] Σ[ p ∈ G .P s j ] F .P (v p) k
-
-  -- interpretation is strong monoidal
-  module _ (X : I → Type) where
-    open import Cubical.Foundations.Equiv using (_≃_)
-
-    idᶜ-≃ : ∀ i → ⟦ idᶜ ⟧ X i ≃ X i
-    idᶜ-≃ i = isoToEquiv idᶜ-iso
-      where
-      open import Cubical.Foundations.Isomorphism using (Iso; isoToEquiv)
-      open Iso
-      idᶜ-iso : Iso (⟦ idᶜ ⟧ X i) (X i)
-      idᶜ-iso .fun (_ , x) = x refl
-      idᶜ-iso .inv x = _ , λ i≡j → subst X i≡j x
-      idᶜ-iso .rightInv x = transportRefl x
-      idᶜ-iso .leftInv (_ , x) = ΣPathP
-        ( refl
-        , implicitFunExt λ {j} → funExt λ i≡j
-          → J (λ k i≡k → subst X i≡k (x refl) ≡ x i≡k) (substRefl {B = X} (x refl)) i≡j
-        )
-        where
-          open import Cubical.Data.Sigma using (ΣPathP)
-
-    ⊗-≃ : ∀ F G i → (⟦ F ⟧ » ⟦ G ⟧) X i ≃ ⟦ F ⊗ G ⟧ X i
-    ⊗-≃ F G i = isoToEquiv ⊗-iso where
-      open import Cubical.Foundations.Isomorphism using (Iso; isoToEquiv)
-      open Iso
-      ⊗-iso : Iso ((⟦ F ⟧ » ⟦ G ⟧) X i) (⟦ F ⊗ G ⟧ X i)
-      ⊗-iso .fun (s , v) = (s , λ p → v p .fst) , λ { (k , p , q) → v p .snd q }
-      ⊗-iso .inv ((s , v) , w) = s , λ p → v p , λ q → w (_ , p , q)
-      ⊗-iso .rightInv _ = refl
-      ⊗-iso .leftInv  _ = refl
-
--- module _ {F G H K} where
---   _⊗₁_ : (α : F ⇒ H) (β : G ⇒ K) → (F ⊗ G) ⇒ (H ⊗ K)
---   (α ⊗₁ β) .σ (Gs , Gsp→Fs) = β .σ Gs , λ { {j} Ksp → α .σ (Gsp→Fs (β .π Gs Ksp)) }
---   (α ⊗₁ β) .π {i} (Gs , Gsp→Fs) (i′ , Kp , Hp) = let
---       Gsp = β .π Gs Kp 
---     in i′ , Gsp , α .π (Gsp→Fs Gsp) Hp
 
 module _ {F G H K : IndexedContainer} where
   _⊗₁_ : (α : F ⇒ H) (β : G ⇒ K) → (F ⊗ G) ⇒ (H ⊗ K)
@@ -123,13 +85,6 @@ module _ {F G H : IndexedContainer} where
   _;_ : (α : F ⇒ G) (β : G ⇒ H) → (F ⇒ H)
   (α ; β) _ s .σs   = β _ (α _ s .σs) .σs 
   (α ; β) _ s .πs p = α _ s .πs (β _ (α _ s .σs) .πs p)
-
--- module _ {F G} where
---   id₁-⊗ₕ : id₁ {F} ⊗ₕ id₁ {G} ≡ id₁ {F ⊗ G}
---   id₁-⊗ₕ = ⇒PathP-ext′
---     (λ { s → refl })
---     (λ { s p → sym $ substRefl p })
-
 
 module _ {F G} (α : F ⇒ G) where
   record ⇒isIso : Type where
@@ -235,4 +190,5 @@ module _ {F G H : IndexedContainer} where
 
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ⊗ IC
+
 

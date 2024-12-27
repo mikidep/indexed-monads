@@ -14,9 +14,7 @@ open import Cubical.Foundations.Prelude public
 syntax ≡[-]-syntax p B xb yb = xb ≡[ p , B ] yb
 infix 4 ≡[-]-syntax
 
-infixr 5 _$_
-_$_ : {ℓ ℓ' : _} {A : Type ℓ} {B : Type ℓ'} → (A → B) → A → B
-f $ x = f x
+open import Cubical.Foundations.Function using (_$_; idfun) public
 
 module _
   {ℓ ℓ' ℓ'' : Level}
@@ -27,6 +25,7 @@ module _
   infixl 9 _»_
   _»_ : (f : (a : A) → B a) → (g : {a : A} → (b : B a) → C a b) → (a : A) → C a (f a)
   _»_ f g x = g (f x) 
+  {-# INLINE _»_ #-}
 
 funExtNonDepHet : {ℓ ℓ′ : Level}
   {A : I → Type ℓ} {B : (i : I) → Type ℓ′}

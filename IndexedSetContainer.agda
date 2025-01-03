@@ -2,10 +2,10 @@ open import Prelude
 open import Cubical.Foundations.HLevels
 open import Cubical.Foundations.Equiv
 
-module IndexedContainer.IndexedSetContainer {I : Type} where
+module IndexedSetContainer (I : Type) where
 
 open import Definitions I
-open import IndexedContainerSigma I as IC using (IndexedContainer)
+open import IndexedContainer I as IC using (IndexedContainer)
 
 record IndexedSetContainer : Type₁ where
   field
@@ -21,9 +21,22 @@ open IndexedContainer
 _⇒_ : (F G : IndexedSetContainer) → Type
 F ⇒ G = ic F IC.⇒ ic G
 
-open import ISetCat I
 open import Cubical.WildCat.Base
-open import WildCat.Functor
+open import WildCat.Functor using (WildFunctor; WildNatTrans)
+open WildCat
+
+ISCCat : WildCat (ℓ-suc ℓ-zero) ℓ-zero
+ISCCat .ob = IndexedSetContainer
+ISCCat .Hom[_,_] F G = F ⇒ G
+ISCCat .id {x = F} = IC.id₁ (ic F)
+ISCCat ._⋆_ = IC._;_
+ISCCat .⋆IdL _ = refl
+ISCCat .⋆IdR _ = refl
+ISCCat .⋆Assoc _ _ _ = refl
+
+ISCCat[_,_] = ISCCat .Hom[_,_]
+
+open import ISetCat I
 open WildFunctor
 
 module _ (F : IndexedSetContainer) where
@@ -39,7 +52,6 @@ module _ (F : IndexedSetContainer) where
 module _ (F G : IndexedSetContainer) (α : F ⇒ G) where
   open import Cubical.Functions.FunExtEquiv using (funExt₂)
   open import Cubical.Data.Sigma using (ΣPathP)
-
   open WildNatTrans
 
   interp-trans : ISetEndoTrans (interp-ic F) (interp-ic G)
@@ -52,6 +64,7 @@ module _ (F G : IndexedSetContainer) (α : F ⇒ G) where
 
 module _ (F G : IndexedSetContainer) (α : ISetEndoTrans (interp-ic F) (interp-ic G)) where
   open WildNatTrans
+  open IC._Π⇒_
   private
     module _ {i : I} (s : ic F .S i) where
       ⟦G⟧ : ISet → ISet
@@ -60,24 +73,10 @@ module _ (F G : IndexedSetContainer) (α : ISetEndoTrans (interp-ic F) (interp-i
       yoneda nat = nat (F .hP s) (ISetCat .WildCat.id {F .hP s})
       yoneda-α : ⟦G⟧ (F .hP s) i .fst 
       yoneda-α = yoneda λ X FP→X → α .N-ob X i (s , λ {j} → FP→X j)
-    open IC._Π⇒_
 
   interp-trans-inv : F ⇒ G
   interp-trans-inv i s .σs = yoneda-α s .fst
   interp-trans-inv i s .πs = yoneda-α s .snd
-
-open WildCat
-
-ISCCat : WildCat (ℓ-suc ℓ-zero) ℓ-zero
-ISCCat .ob = IndexedSetContainer
-ISCCat .Hom[_,_] F G = F ⇒ G
-ISCCat .id {x = F} = IC.id₁ (ic F)
-ISCCat ._⋆_ = IC._;_
-ISCCat .⋆IdL _ = refl
-ISCCat .⋆IdR _ = refl
-ISCCat .⋆Assoc _ _ _ = refl
-
-ISCCat[_,_] = ISCCat .Hom[_,_]
 
 interpF : WildFunctor ISCCat ISetEndoCat
 interpF .F-ob = interp-ic
@@ -91,16 +90,19 @@ fully-faithful-interpF :
 fully-faithful-interpF F G = isoToEquiv iso
   where
   open import Cubical.Foundations.Isomorphism using (Iso; isoToEquiv)
+  open import Cubical.Foundations.Equiv using (invEq)
+  open import Cubical.Functions.FunExtEquiv using (funExt₃; funExt₂Equiv)
   open Iso
   open IC._Π⇒_
   open WildNatTrans
   iso : Iso (F ⇒ G) (ISetEndoCat .Hom[_,_] (interp-ic F) (interp-ic G))
   iso .fun = interp-trans F G
-  iso .inv α i s .σs =
-    let
-      α⟦G⟧FP = α .N-ob (interp-ic G .F-ob (F .hP s))
-    in α⟦G⟧FP i {! !} .fst
-    -- in α .N-ob (G .hS) i (s , {! !}) .fst
-  iso .inv α i s .πs p = {! !}
-  iso .rightInv = {! !}
-  iso .leftInv = {! !}
+  iso .inv = interp-trans-inv F G
+  iso .rightInv α = ISetEndoTransPathP $ funExt₃ λ {
+      X i (s , v) → 
+        let
+          α□v = α .N-hom {x = F .hP s} {y = X} λ j → v {j}
+        in 
+          sym $ invEq funExt₂Equiv α□v i (s , λ p → p)
+    }
+  iso .leftInv α = IC.⇒PathP λ s → IC.Π⇒PathP refl refl

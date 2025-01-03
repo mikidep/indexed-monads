@@ -3,7 +3,7 @@ open import Cubical.Foundations.Equiv using (_≃_)
 
 module IndexedContainer.Properties {I : Type} where
 
-open import IndexedContainerSigma I as IC using (IndexedContainer)
+open import IndexedContainer I as IC using (IndexedContainer)
 
 -- interpretation is strong monoidal
 module _ (X : I → Type) where

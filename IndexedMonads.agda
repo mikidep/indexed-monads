@@ -95,18 +95,13 @@ module _
       ↗-unit-r : ∀ {i} (s : S i) {j}
         → PathP (λ ι → P (e-unit-r s ι) j → P s j)
           (λ p →
-            -- dependent two arg subst?
-            transport
-              (λ ι → P
-                {i = P-e-idx (substS-Pe s ↖ p) (~ ι)}
-                (subst-filler S (P-e-idx (substS-Pe s ↖ p)) s (~ ι))
-                j
-              )
+            let eq = P-e-idx (substS-Pe s ↖ p) 
+            in transport
+              (cong₂ (λ i s → P {i} s j) (sym eq) (symP $ subst-filler S eq s))
               (substS-Pe s ↗ p)
           )
           (λ p → p)
 
-  --
   --     ↖-unit-l : ∀ {i} {s : S i} {j}
   --       → (p : P (s • (λ {j} _ → e j)) j)  
   --       → let
@@ -161,11 +156,9 @@ module _
         (s : S i)
         (s′ : {j : I} → P s j → S j)
         (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
-        (p : P (s • s′ • smoosh s″) j) 
-        → let
-          tr = substP T (•-assoc s s′ s″)
-        in
-            smoosh s″ ↑ p ≡ (s″ (s′ Π• s″ ↑ tr p) (s′ Π• s″ ↖ tr p )) ↑ (s′ Π• s″ ↗ tr p)
+        → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → I) 
+          (λ p → smoosh s″ ↑ p)
+          (λ p → s″ ((s′ Π• s″) ↑ p) ((s′ Π• s″) ↖ p) ↑ (s′ Π• s″ ↗ p)) 
 
       -- -- new
       -- ↖↑-↑-assoc : ∀ {i} {j} 
@@ -259,46 +252,16 @@ module _
         (implicitFunExt λ {j} → ↖-unit-l s)
       isICMS→isICMonoid .η-unit-r = ⇒PathP λ {i} s → Π⇒PathP
         (e-unit-r s)
-        (implicitFunExt λ {j} →
-          {! !}
-        )
-        -- (implicitFunExt λ {j} →
-        --   funExtNonDepHet λ p → idfun
-        --     ( transport refl
-        --       (transp (λ i₁ → P (transp (λ _ → S i) i₁ s) j) i0
-        --         (transp (λ j₁ → P
-        --           (transp (λ i₁ → S (P-e-idx ((λ q → subst S (P-e-idx q) s) ↖ p) (~ j₁ ∧ i₁))) i0 s)
-        --           j
-        --         )
-        --         i0 ((λ q → subst S (P-e-idx q) s) ↗ p))
-        --       )
-        --       ≡ substP T (e-unit-r s) p
-        --     )
-        --     {! !} 
-        -- )
-      isICMS→isICMonoid .μ-assoc = ⇒PathP λ { (s , v) → Π⇒PathP
-          {! !} {! !}
+        (implicitFunExt λ {j} → ↗-unit-r s)
+      isICMS→isICMonoid .μ-assoc = ⇒PathP λ { ((s , s′) , s″) → Π⇒PathP
+          (•-assoc s s′ (curry″ s″))
+          (implicitFunExt λ {j} →
+            λ { ι p →
+                ↑-↗↑-assoc s s′ (curry″ s″) ι p 
+              , {! !}
+            }
+          )
         }
-  --     isICMS→isICMonoid .η-unit-l = ⇒PathP-ext′
-  --       (λ { (s , v) → e-unit-l s })
-  --       λ { (s , v) p → ΣPathP
-  --         ( ↑-unit-l p
-  --         , ΣPathP 
-  --           ( toPathP (↖-unit-l p)
-  --           , toPathP (↗-unit-l p)
-  --           )
-  --         )
-  --       }
-  --     isICMS→isICMonoid .η-unit-r = ⇒PathP-ext′
-  --       (λ { (_ , ss) → e-unit-r ss })
-  --       λ { (_ , ss) p → ΣPathP
-  --         ( ↑-unit-r ss p
-  --         , ΣPathP
-  --           ( toPathP (↖-unit-r ss p)
-  --           , toPathP (↗-unit-r ss p)
-  --           )
-  --         )
-  --       }
   --     isICMS→isICMonoid .μ-assoc = ⇒PathP-ext′
   --       (λ { ((s , s′) , s″) → •-assoc s s′ (curry″ s″) })
   --       λ { ((s , s′) , s″) p → ΣPathP

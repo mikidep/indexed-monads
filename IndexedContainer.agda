@@ -1,7 +1,7 @@
 open import Prelude
 
 open import Cubical.Foundations.Function using (idfun)
-open import Cubical.Functions.FunExtEquiv using (funExt₂; funExtDep; funExtNonDep; funExtNonDep⁻)
+open import Cubical.Functions.FunExtEquiv using (funExt₂; funExtDep)
 open import Cubical.Data.Unit
 
 module IndexedContainer (I : Type) where

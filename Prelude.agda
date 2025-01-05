@@ -27,6 +27,12 @@ module _
   _»_ f g x = g (f x) 
   {-# INLINE _»_ #-}
 
+infixl -1 _€_
+
+_€_ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : A → Type ℓ'} → (a : A) → ((a : A) → B a) → B a
+a € f = f a
+{-# INLINE _€_ #-}
+
 funExtNonDepHet : {ℓ ℓ′ : Level}
   {A : I → Type ℓ} {B : (i : I) → Type ℓ′}
   {f : A i0 → B i0} {g : A i1 → B i1}

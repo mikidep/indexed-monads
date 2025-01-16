@@ -6,7 +6,7 @@ open import Cubical.Foundations.Function using (idfun; curry; uncurry; _∘_)
 
 import IndexedContainer as ICModule
 
-module IndexedMonads (I : Type) (T : ICModule.IndexedContainer I) where
+module IndexedMonad (I : Type) (T : ICModule.IndexedContainer I) where
 
 open ICModule I
 
@@ -29,20 +29,20 @@ record RawICMS : Type where
   field
     e  : ∀ i → S i
     _•_ : ∀ {i} (s : S i)
-      → (v : ∀ {j} (p : P s j) → S j)
+      → (s′ : ∀ {j} (p : P s j) → S j)
       → S i
     _↑_ : ∀ {i} {s : S i}
-      → (v : ∀ {j} (p : P s j) → S j)
-      → {j : I} (p : P (s • v) j)
+      → (s′ : ∀ {j} (p : P s j) → S j)
+      → {j : I} (p : P (s • s′) j)
       → I 
     _↖_ : ∀ {i} {s : S i}
-      → (v : ∀ {j} (p : P s j) → S j)
-      → {j : I} (p : P (s • v) j)
-      → P s (v ↑ p)
+      → (s′ : ∀ {j} (p : P s j) → S j)
+      → {j : I} (p : P (s • s′) j)
+      → P s (s′ ↑ p)
     _↗_ : ∀ {i} {s : S i}
-      → (v : ∀ {j} (p : P s j) → S j)
-      → {j : I} (p : P (s • v) j)
-      → P (v (v ↖ p)) j
+      → (s′ : ∀ {j} (p : P s j) → S j)
+      → {j : I} (p : P (s • s′) j)
+      → P (s′ (s′ ↖ p)) j
     P-e-idx : ∀ {i} {j} → P (e i) j → i ≡ j
 
   infixl 24 _Π•_
@@ -55,27 +55,27 @@ record RawICMS : Type where
 
   _Π•_ : ∀ {i} {s : S i}
       (s′ : {j : I} → P s j → S j)
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → ∀ {j} (p : P s j) → S j
-  (s′ Π• s″) {j} p = s′ p • s″ j p
+  (s′ Π• s″) {j} p = s′ p • s″ p
 
   smoosh : ∀ {i} {s : S i}
       {s′ : {j : I} → P s j → S j}
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → ∀ {j} (p : P (s • s′) j) → S j
-  smoosh {s′} s″ p = s″ (s′ ↑ p) (s′ ↖ p) (s′ ↗ p)
+  smoosh {s′} s″ p = s″ (s′ ↖ p) (s′ ↗ p)
 
   curry″ : ∀ {i} {s : S i}
       {s′ : {j : I} → P s j → S j}
       (s″ : {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j)
-      → {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j
-  curry″ s″ k p q = s″ (k , p , q)
+      → {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j
+  curry″ s″ p q = s″ (_ , p , q)
 
   uncurry″ : ∀ {i} {s : S i}
       {s′ : {j : I} → P s j → S j}
-      → ({j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      → ({j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → {j : I} → Σ I (λ k → Σ (P s k) (λ p → P (s′ p) j)) → S j
-  uncurry″ s″ (k , p , q) = s″ k p q
+  uncurry″ s″ (_ , p , q) = s″ p q
 
 record isICMS (raw : RawICMS) : Type where
   open RawICMS raw
@@ -107,31 +107,31 @@ record isICMS (raw : RawICMS) : Type where
     •-assoc : ∀ {i} 
       (s : S i)
       (s′ : {j : I} → P s j → S j)
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → s • s′ • smoosh s″ ≡ s • (s′ Π• s″)
 
     -- new
     ↑-↗↑-assoc : ∀ {i} {j} 
       (s : S i)
       (s′ : {j : I} → P s j → S j)
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → I) 
         (λ p → smoosh s″ ↑ p)
-        (λ p → s″ ((s′ Π• s″) ↑ p) ((s′ Π• s″) ↖ p) ↑ (s′ Π• s″ ↗ p)) 
+        (λ p → s″ (s′ Π• s″ ↖ p) ↑ (s′ Π• s″ ↗ p)) 
 
     -- new
     ↖↑-↑-assoc : ∀ {i} {j} 
       (s : S i)
       (s′ : {j : I} → P s j → S j)
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → I) 
           (λ p → s′ ↑ (smoosh s″ ↖ p))
-          (λ p → (s′ Π• s″) ↑ p)
+          (λ p → s′ Π• s″ ↑ p)
 
     ↖↖-↖-assoc : ∀ {i} {j} 
       (s : S i)
       (s′ : {j : I} → P s j → S j)
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → P s (↖↑-↑-assoc s s′ s″ ι p)) 
         (λ p → s′ ↖ (smoosh s″ ↖ p))
         (λ p → s′ Π• s″ ↖ p)
@@ -139,18 +139,18 @@ record isICMS (raw : RawICMS) : Type where
     ↖↗-↗↖-assoc : ∀ {i} {j} 
       (s : S i)
       (s′ : {j : I} → P s j → S j)
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
       → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → P (s′ (↖↖-↖-assoc s s′ s″ ι p)) (↑-↗↑-assoc s s′ s″ ι p)) 
         (λ p → s′ ↗ (smoosh s″ ↖ p))
-        (λ p → s″ (s′ Π• s″ ↑ p) (s′ Π• s″ ↖ p) ↖ (s′ Π• s″ ↗ p)) 
+        (λ p → s″ (s′ Π• s″ ↖ p) ↖ (s′ Π• s″ ↗ p)) 
 
     ↗-↗↗-assoc : ∀ {i} {j} 
       (s : S i)
       (s′ : {j : I} → P s j → S j)
-      (s″ : {j : I} → ∀ k (p : P s k) → P (s′ p) j → S j)
-      → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → P (s″ (↖↑-↑-assoc s s′ s″ ι p) (↖↖-↖-assoc s s′ s″ ι p) (↖↗-↗↖-assoc s s′ s″ ι p)) j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
+      → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → P (s″ (↖↖-↖-assoc s s′ s″ ι p) (↖↗-↗↖-assoc s s′ s″ ι p)) j)
         (λ p → smoosh s″ ↗ p)
-        (λ p → s″ ((s′ Π• s″) ↑ p) ((s′ Π• s″) ↖ p) ↗ ((s′ Π• s″) ↗ p))
+        (λ p → s″ (s′ Π• s″ ↖ p) ↗ (s′ Π• s″ ↗ p))
 
 record ICMS : Type where
   field
@@ -164,8 +164,8 @@ module _ (icms : RawICMS) where
   RawICMS→RawICMonoid : RawICMonoid
   RawICMS→RawICMonoid .η i _ .σs = e i
   RawICMS→RawICMonoid .η _ _ .πs p = P-e-idx p
-  RawICMS→RawICMonoid .μ _ (s , v) .σs = s • v
-  RawICMS→RawICMonoid .μ _ (_ , v) .πs p = v ↑ p , v ↖ p , v ↗ p
+  RawICMS→RawICMonoid .μ _ (s , s′) .σs = s • s′
+  RawICMS→RawICMonoid .μ _ (_ , s′) .πs p = s′ ↑ p , s′ ↖ p , s′ ↗ p
 
   open isICMonoid
 
@@ -202,10 +202,10 @@ module _ (icmon : RawICMonoid) where
     RawICMonoid→RawICMS : RawICMS
     RawICMonoid→RawICMS .e i = η i _ .σs
     RawICMonoid→RawICMS .P-e-idx {i} p = η i _ .πs p
-    RawICMonoid→RawICMS ._•_ {i} s v = μ i (s , v) .σs
-    RawICMonoid→RawICMS ._↑_ {i} {s} v p = μ i (s , v) .πs p .fst
-    RawICMonoid→RawICMS ._↖_ {i} {s} v p = μ i (s , v) .πs p .snd .fst
-    RawICMonoid→RawICMS ._↗_ {i} {s} v p = μ i (s , v) .πs p .snd .snd
+    RawICMonoid→RawICMS ._•_ {i} s s′ = μ i (s , s′) .σs
+    RawICMonoid→RawICMS ._↑_ {i} {s} s′ p = μ i (s , s′) .πs p .fst
+    RawICMonoid→RawICMS ._↖_ {i} {s} s′ p = μ i (s , s′) .πs p .snd .fst
+    RawICMonoid→RawICMS ._↗_ {i} {s} s′ p = μ i (s , s′) .πs p .snd .snd
 
   module _ (is-icmon : isICMonoid icmon) where
     open RawICMS RawICMonoid→RawICMS
@@ -218,12 +218,12 @@ module _ (icmon : RawICMonoid) where
     isICMonoid→isICMS .↖-unit-l = πs≡ η-unit-l
     isICMonoid→isICMS .e-unit-r = σs≡ η-unit-r
     isICMonoid→isICMS .↗-unit-r = πs≡ η-unit-r
-    isICMonoid→isICMS .•-assoc s s′ s″ = σs≡ μ-assoc ((s , s′) , uncurry″ s″)
-    isICMonoid→isICMS .↑-↗↑-assoc {j} s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) {j} ι p .fst
-    isICMonoid→isICMS .↖↑-↑-assoc {j} s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) {j} ι p .snd .fst .fst
-    isICMonoid→isICMS .↖↖-↖-assoc {j} s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) {j} ι p .snd .fst .snd .fst
-    isICMonoid→isICMS .↖↗-↗↖-assoc {j} s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) {j} ι p .snd .fst .snd .snd
-    isICMonoid→isICMS .↗-↗↗-assoc {j} s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) {j} ι p .snd .snd
+    isICMonoid→isICMS .•-assoc     s s′ s″ = σs≡ μ-assoc ((s , s′) , uncurry″ s″)
+    isICMonoid→isICMS .↑-↗↑-assoc  s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) ι p .fst
+    isICMonoid→isICMS .↖↑-↑-assoc  s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) ι p .snd .fst .fst
+    isICMonoid→isICMS .↖↖-↖-assoc  s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) ι p .snd .fst .snd .fst
+    isICMonoid→isICMS .↖↗-↗↖-assoc s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) ι p .snd .fst .snd .snd
+    isICMonoid→isICMS .↗-↗↗-assoc  s s′ s″ ι p = πs≡ μ-assoc ((s , s′) , uncurry″ s″) ι p .snd .snd
 
 module _ (icms : RawICMS) where
   inv-RawICMS : (icms € RawICMS→RawICMonoid € RawICMonoid→RawICMS) ≡ icms

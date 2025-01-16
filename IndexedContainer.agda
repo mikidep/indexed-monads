@@ -107,29 +107,6 @@ module _ {F : IndexedContainer} where
   unitor-l-inv _ s .σs = s , _
   unitor-l-inv _ s .πs (k , p , k≡j) = subst (P s) k≡j p
 
---   unitor-l-iso : ⇒isIso unitor-l
---   unitor-l-iso .inv = unitor-l-inv
---   unitor-l-iso .inv-l = ⇒PathP-extP
---     (λ _ → refl)
---     λ _ {j} → funExt λ { 
---       (k , p , k≡j) → ΣPathP
---       ( sym k≡j
---       , ΣPathP
---         ( toPathP⁻ refl
---         , toPathP⁻
---           ( J
---             (λ h j≡h → refl ≡ subst (_≡ j) (sym j≡h) (sym j≡h))
---             (sym (substRefl {B = _≡ j} refl))
---             (sym k≡j)
---           )
---         )
---       )
---     } 
---   unitor-l-iso .inv-r = ⇒PathP-extP
---     (λ _ → refl )
---     λ s {j} → funExt (substRefl {B = P s}) 
-
-  
   unitor-l-inv-l : Path ((idᶜ ⊗ F) ⇒ (idᶜ ⊗ F)) (unitor-l ; unitor-l-inv) (id₁ (idᶜ ⊗ F))
   unitor-l-inv-l =
     ⇒PathP λ { (s , _) → Π⇒PathP
@@ -138,13 +115,8 @@ module _ {F : IndexedContainer} where
         funExt λ { (k , p , k≡j) → ΣPathP
           ( sym k≡j
           , ΣPathP
-            ( toPathP⁻ refl
-            , toPathP⁻
-              ( J
-                (λ h j≡h → refl ≡ subst (_≡ j) (sym j≡h) (sym j≡h))
-                (sym (substRefl {B = _≡ j} refl))
-                (sym k≡j)
-              )
+            ( symP (subst-filler (P s) k≡j p)
+            , symP λ ι κ → k≡j (ι ∨ κ)
             )
           )
         }

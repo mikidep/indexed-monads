@@ -1,0 +1,126 @@
+{
+  "nodes": {
+    "agda": {
+      "inputs": {
+        "flake-utils": [
+          "agda-cubical",
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "agda-cubical",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1701366566,
+        "narHash": "sha256-B8Jmjld0gGbkVO08GsovVqrUXCs8VfJ8UdM3sjHnzgM=",
+        "owner": "agda",
+        "repo": "agda",
+        "rev": "4293e0a94d15acac915ab9088b2ec028f78d14a9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "agda",
+        "ref": "v2.6.4.1",
+        "repo": "agda",
+        "type": "github"
+      }
+    },
+    "agda-cubical": {
+      "inputs": {
+        "agda": "agda",
+        "flake-compat": "flake-compat",
+        "flake-utils": "flake-utils",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1736140277,
+        "narHash": "sha256-3pTaQGJPDh9G68RmQAZM7AgBQ8jcqvEUteQep0MsVhw=",
+        "owner": "agda",
+        "repo": "cubical",
+        "rev": "2f085f5675066c0e1708752587ae788c036ade87",
+        "type": "github"
+      },
+      "original": {
+        "owner": "agda",
+        "ref": "2f085f5",
+        "repo": "cubical",
+        "type": "github"
+      }
+    },
+    "flake-compat": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1696426674,
+        "narHash": "sha256-kvjfFW7WAETZlt09AgDn1MrtKzP7t90Vf7vypd3OL1U=",
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "rev": "0f9255e01c2351cc7d116c072cb317785dd33b33",
+        "type": "github"
+      },
+      "original": {
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1705309234,
+        "narHash": "sha256-uNRRNRKmJyCRC/8y1RqBkqWBLM034y4qN7EprSdmgyA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "1ef2e671c3b0c19053962c07dbda38332dcebf26",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1736012469,
+        "narHash": "sha256-/qlNWm/IEVVH7GfgAIyP6EsVZI6zjAx1cV5zNyrs+rI=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "8f3e1f807051e32d8c95cd12b9b421623850a34d",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-unstable",
+        "type": "indirect"
+      }
+    },
+    "root": {
+      "inputs": {
+        "agda-cubical": "agda-cubical",
+        "nixpkgs": "nixpkgs"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

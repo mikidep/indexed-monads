@@ -142,25 +142,6 @@ module _ {F : IndexedContainer} where
     --   p
     -- -- But this is not a perfect world.
 
---   unitor-r-iso : ⇒isIso unitor-r
---   unitor-r-iso .inv = unitor-r-inv
---   unitor-r-iso .inv-l = ⇒PathP-extP
---     (λ { {i} (_ , si) → 
---       ΣPathP
---         ( refl
---         , implicitFunExt
---           λ {j} → funExt 
---             λ i≡j → J
---               (λ h i≡h → subst S i≡h (si (λ _ → i)) ≡ si i≡h)
---               (substRefl {B = S} (si refl))
---               i≡j
---         )
---     })
---     λ { {i} (_ , si) {j} → funExtNonDep {! !} 
---
---     }
---   unitor-r-iso .inv-r = {! !}
-
 module _ {F G H : IndexedContainer} where
   associator : (F ⊗ (G ⊗ H)) ⇒ ((F ⊗ G) ⊗ H)
   associator _ ((s″ , op″) , op′) .σs  = s″ , λ {j} p″ → op″ p″ , λ p′ → op′ (j , p″ , p′)

@@ -87,89 +87,53 @@ module ProductMonad {I : Type}
   is-icms-T×T′ .isICMS.↗-↗↗-assoc ss ss′ ss″ ι (inl p) = inl (is  .↗-↗↗-assoc _ _ _ ι p) 
   is-icms-T×T′ .isICMS.↗-↗↗-assoc ss ss′ ss″ ι (inr p) = inr (is′ .↗-↗↗-assoc _ _ _ ι p)  
 
-module IndexedState (I : Type) (E : I → Type) where
+module IndexedState (I : Type) (E : I → Type) (issI : isSet I) where
   open IC I
   open IndexedContainer
 
   -- ∀ i → E i → Σ j . E j × X j
-  -- ∀ (Σ i . E i) → Σ j . E j × X j
-  -- Σ (md : Σ I E → I) (∀ (ms : Σ I E) → E (md ms) × X (md ms))
-  -- Σ (md : Σ I E → I) ((∀ (ms : Σ I E) → E (md ms)) × (∀ (ms : Σ I E) → X (md ms)))
-  -- Σ (md : Σ I E → I) (∀ (ms : Σ I E) → E (md ms)) × (∀ j (ms : Σ I E) → md ms ≡ j → X j)
-  -- Shapes:
-  --  Σ (md : Σ I E → I) (∀ (ms : Σ I E) → E (md ms))
-  --  ∀ (ms : Σ I E) Σ I E
   StateIC : IndexedContainer
-  StateIC .S i = Σ (E i → I) (λ md → (ei : E i) → E (md ei))
-  StateIC .P {i} (md , ms) j = Σ (E i) (λ ei → md ei ≡ j)
+  StateIC .S i = E i → Σ I E
+  StateIC .P {i} ms j = Σ (E i) (λ ei → ms ei .fst ≡ j) 
 
   open IM I StateIC 
   open RawICMS
 
   stateic-raw-icms : RawICMS
-  stateic-raw-icms .e _ = _ , idfun _
-  stateic-raw-icms ._•_ (_ , ms) s′ = _ , λ e → s′ (e , refl) .snd (ms e)
-  stateic-raw-icms ._↑_ {s = (md , _)} _ (ei , _) = md ei
-  stateic-raw-icms ._↖_ _ (e , _) = e , refl
-  stateic-raw-icms ._↗_ {s = (_ , ms)} _ (e , s′e≡) = ms e , s′e≡
-  stateic-raw-icms .P-e-idx (_ , i≡j) = i≡j
+  stateic-raw-icms .e i ei = i , ei
+  stateic-raw-icms ._•_ ms ms′ ei = ms′ (ei , refl) (ms ei .snd)
+  stateic-raw-icms ._↑_ {s = ms} _ (ei , _) = ms ei .fst
+  stateic-raw-icms ._↖_ _ (ei , _) = ei , refl
+  stateic-raw-icms ._↗_ {s = ms} _ (ei , eq) = ms ei .snd , eq
+  stateic-raw-icms .P-e-idx = snd
 
   open isICMS
   open import Cubical.Data.Sigma using (ΣPathP)
   open import Cubical.Foundations.Transport
+  open import Cubical.Foundations.Path
 
   stateic-is-icms : isICMS stateic-raw-icms
-  stateic-is-icms .e-unit-l (_ , s) = refl
-  stateic-is-icms .↖-unit-l (md , ms) {j} = funExt λ {(e , x) → ΣPathP (substRefl {B = E} e , {!   !})} -- UIP for now
-  stateic-is-icms .e-unit-r {i} (md , ms) = 
-    ΣPathP
-    ( 
-      funExt (λ e → transportRefl (md (transport (λ _ → E i) e)) ∙ cong md (transportRefl e))
-    , funExt (λ e → {!   !}) -- this is refl on (ms e) up to UIP
-    )
-  stateic-is-icms .↗-unit-r {i} (md , ms) {j} ι (e , x) = transp (λ _ → E i) ι e , {! !} -- UIP 
-  stateic-is-icms .•-assoc s s′ s″ = ΣPathP (refl , funExt λ e → refl)
-  stateic-is-icms .↑-↗↑-assoc s s′ s″ = refl
-  stateic-is-icms .↖↑-↑-assoc s s′ s″ = refl
-  stateic-is-icms .↖↖-↖-assoc s s′ s″ = refl
-  stateic-is-icms .↖↗-↗↖-assoc s s′ s″ = refl 
-  stateic-is-icms .↗-↗↗-assoc s s′ s″ = refl 
+  stateic-is-icms .e-unit-l ms = refl
+  stateic-is-icms .↖-unit-l {i = i} ms {j = j} = 
+    funExt λ {
+      (ei , eq) → ΣPathP ( substRefl {B = E} ei , toPathP (issI _ _ _ _))
+    }
+  stateic-is-icms .e-unit-r ms = substRefl {B = λ i → E i → Σ I E} ms
+  stateic-is-icms .↗-unit-r {i = i} ms {j = j} = toPathP (funExt λ {(ei , eq) → ΣPathP
+    ( substRefl {B = E} _ ∙ substRefl {B = E} _ ∙ substRefl {B = E} ei
+    , toPathP (issI _ _ _ _)
+    ) })
+  stateic-is-icms .•-assoc ms ms′ ms″ = refl
+  stateic-is-icms .↑-↗↑-assoc ms ms′ ms″ = refl
+  stateic-is-icms .↖↑-↑-assoc ms ms′ ms″ = refl
+  stateic-is-icms .↖↖-↖-assoc ms ms′ ms″ = refl
+  stateic-is-icms .↖↗-↗↖-assoc ms ms′ ms″ = refl
+  stateic-is-icms .↗-↗↗-assoc ms ms′ ms″ = refl
 
 module NonIndexedState (E : Type) where
-  open IndexedState Unit (λ _ → E) renaming (StateIC to StateC)
+  open import Cubical.Data.Unit.Properties using (isSetUnit)
+  open IndexedState Unit (λ _ → E) isSetUnit renaming (StateIC to StateC)
 
-  open IM Unit StateC
-  open RawICMS
-
-  statec-raw-icms : RawICMS
-  statec-raw-icms .e _ = _ , idfun _
-  statec-raw-icms ._•_ s s′ = _ , λ e → s′ (e , refl) .snd (s .snd e)
-  statec-raw-icms ._↑_ = _
-  statec-raw-icms ._↖_ s′ (e , _) = e , refl
-  statec-raw-icms ._↗_ {s = (_ , s)} s′ (e , s′e≡) = s e , s′e≡ 
-  statec-raw-icms .P-e-idx (e , i≡j) = i≡j
-
-  open isICMS
-  open import Cubical.Data.Sigma using (ΣPathP)
-
-  statec-is-icms : isICMS statec-raw-icms
-  statec-is-icms .e-unit-l (_ , s) = refl
-  statec-is-icms .↖-unit-l (_ , s) = funExt λ {(e , x) → ΣPathP (substRefl {A = Unit} e , λ ι → x)}
-  statec-is-icms .e-unit-r (_ , s) = 
-    ΣPathP
-    ( refl
-    , funExt λ e → 
-      substRefl {A = Unit} (s (subst {A = Unit} (λ _ → E) refl e)) 
-      ∙ cong s (substRefl {A = Unit} e)
-    )
-  statec-is-icms .↗-unit-r (_ , s) = funExt λ {(e , x) → ΣPathP (substRefl {A = Unit} e , λ ι → x)}
-  statec-is-icms .•-assoc s s′ s″ = ΣPathP (refl , funExt λ e → refl)
-  statec-is-icms .↑-↗↑-assoc s s′ s″ = refl
-  statec-is-icms .↖↑-↑-assoc s s′ s″ = refl
-  statec-is-icms .↖↖-↖-assoc s s′ s″ = refl
-  statec-is-icms .↖↗-↗↖-assoc s s′ s″ = refl 
-  statec-is-icms .↗-↗↗-assoc s s′ s″ = refl 
-  
   open import Cubical.Data.Sigma using (_×_)
   StateF : Type → Type
   StateF X = E → E × X
@@ -193,13 +157,12 @@ module NonIndexedState (E : Type) where
   assoc : ∀ {X} → μl {X} ≡ μr
   assoc = funExt λ x → refl
 
-  
   open import Cubical.Foundations.Isomorphism
   open IC Unit using (⟦_⟧)
 
   StateCIso : ∀ {X : Type} → Iso (⟦ StateC ⟧ (λ _ → X) _) (StateF X)
-  StateCIso .Iso.fun (s , px) e = s .snd e , px (e , refl)
-  StateCIso .Iso.inv sx = (_ , sx » fst) ,  fst » sx » snd 
+  StateCIso .Iso.fun (s , px) e = s e .snd , px (e , refl)
+  StateCIso .Iso.inv sx = sx » fst » (tt ,_) , fst » sx » snd
   StateCIso .Iso.rightInv sx = refl
   StateCIso .Iso.leftInv scx = refl
 

@@ -95,9 +95,10 @@ module IndexedState (I : Type) (E : I → Type) (issI : isSet I) where
   StateIC : IndexedContainer
   StateIC .S i = E i → Σ I E
   StateIC .P {i} ms j = Σ (E i) (λ ei → ms ei .fst ≡ j) 
-
   open IM I StateIC 
   open RawICMS
+  
+  
 
   stateic-raw-icms : RawICMS
   stateic-raw-icms .e i ei = i , ei

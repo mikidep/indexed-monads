@@ -25,6 +25,16 @@ module _ where
 
   open _Π⇒_ public
 
+  module _ {F G : IndexedContainer} {i : I} {s : F .S i} where
+    open import Cubical.Foundations.Isomorphism
+    open Iso
+
+    Π⇒IsoΣ : Iso ((F Π⇒ G) s) (Σ (G .S i) (λ σs → ∀ {j} → G .P σs j → F .P s j))
+    Π⇒IsoΣ .fun x = x .σs , x .πs
+    Π⇒IsoΣ .inv (σs , πs) = record { σs = σs ; πs = πs }
+    Π⇒IsoΣ .rightInv _ = refl
+    Π⇒IsoΣ .leftInv _ = refl
+
   module _ {F G : IndexedContainer} {i : I} {s : F .S i} {α β : (F Π⇒ G) s} where
     Π⇒PathP : 
       (≡σs : α .σs ≡ β .σs)

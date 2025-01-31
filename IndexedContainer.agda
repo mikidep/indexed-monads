@@ -75,7 +75,7 @@ module _ where
 
   module _ (F : IndexedContainer) where
     _⟦$⟧_ : {X Y : I → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ F ⟧ X i → ⟦ F ⟧ Y i)
-    _⟦$⟧_ f i (s , v) = s , λ p → f _ (v p)
+    _⟦$⟧_ f i (s , v) = s , λ {j} p → f j (v p)
 
   module _ (F G : IndexedContainer) where
     _⊗_ : IndexedContainer

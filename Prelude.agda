@@ -43,6 +43,14 @@ funExtNonDepHet {A = A} {B} {f} {g} = invEq (heteroHomotopy≃Homotopy {g = g}) 
   open import Cubical.Foundations.Equiv using (invEq)
   open import Cubical.Functions.FunExtEquiv using (funExtDep; heteroHomotopy≃Homotopy)
 
+funExtConstCod : {ℓ ℓ′ : Level} {A : I → Type ℓ} {B : Type ℓ′}
+  {f : A i0 → B} {g : A i1 → B}
+  → ({x₀ : A i0} {x₁ : A i1} → PathP A x₀ x₁ → f x₀ ≡ g x₁)
+  → PathP (λ i → A i → B) f g
+funExtConstCod {A = A} h i x = h (λ j → coei→j A i j x) i
+  where
+  open import Cubical.Foundations.CartesianKanOps
+
 funExtNonDepHet⁻ : {ℓ ℓ′ : Level}
   {A : I → Type ℓ} {B : (i : I) → Type ℓ′}
   {f : A i0 → B i0} {g : A i1 → B i1}
@@ -51,3 +59,23 @@ funExtNonDepHet⁻ : {ℓ ℓ′ : Level}
 funExtNonDepHet⁻ {A = A} {B} {f} {g} = funExtDep⁻ » fst (heteroHomotopy≃Homotopy {g = g})
   where
   open import Cubical.Functions.FunExtEquiv using (funExtDep⁻; heteroHomotopy≃Homotopy)
+
+module _ where
+  private
+    variable
+      ℓ ℓ′ ℓ″ : Level
+      A : Type ℓ
+      A′ : Type ℓ′
+
+  module _ {x : A} {z : A′}
+    (P : (y : A) → x ≡ y → (w : A′) → z ≡ w → Type ℓ″)
+    (d : P x refl z refl)
+    where
+
+    private
+      ΠP : (y : A) → x ≡ y → _
+      ΠP y p = ∀ z q → P y p z q
+
+    J₂ : {y : A} (p : x ≡ y) {w : A′} (q : z ≡ w)
+      → P y p w q
+    J₂ p = J ΠP (λ _ → J (P x refl) d) p _  

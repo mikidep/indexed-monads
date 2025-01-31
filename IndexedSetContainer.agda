@@ -85,8 +85,11 @@ module _ (F G : IndexedSetContainer)  where
   ext-mor-inv : SetIEndo [ ext-ob F , ext-ob G ] → F ⇒ G
   ext-mor-inv α i s = record { σs = repr .fst ; πs = repr .snd }
     where
+    open import Cubical.Categories.Yoneda
     ⟦G⟧ : ISet → ISet
     ⟦G⟧ = ext-ob G .F-ob
+    -- Endofunctors [ Set^I , Set^I ] can be seen as PSh(Set^I × I),
+    -- in this view this is probably good old fashioned Yoneda lemma.
     yo→ :
       (∀ (X : SetI .ob) → (F .hP s is→ X) → ⟦G⟧ X i .fst)
       → ⟦G⟧ (F .hP s) i .fst 
@@ -101,11 +104,11 @@ module _ (F G : IndexedSetContainer)  where
     (funExt₃ λ {
       X i (s , v) →
         let
-          α□v = α .N-hom {x = F .hP s} {y = X} λ j → v {j}
+          α□v = α .N-hom λ j → v {j}
         in 
           sym $ invEq funExt₂Equiv α□v i (s , λ p → p)
      })
-  iso-ext-mor .Iso.leftInv α = IC.⇒PathP λ s → IC.Π⇒PathP refl refl 
+  iso-ext-mor .Iso.leftInv α = IC.⇒PathP λ _ → refl
 
 ext : Functor ISCCat SetIEndo
 ext .F-ob = ext-ob

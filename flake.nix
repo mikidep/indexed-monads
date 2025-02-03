@@ -11,6 +11,7 @@
 
   # Flake outputs
   outputs = {
+    self,
     nixpkgs,
     agda-cubical,
     ...
@@ -27,17 +28,21 @@
     forEachSupportedSystem = f:
       nixpkgs.lib.genAttrs supportedSystems (system:
         f {
+          inherit system;
           pkgs = import nixpkgs {
             inherit system;
             overlays = [agda-cubical.overlays.default];
           };
         });
   in {
-    devShells = forEachSupportedSystem ({pkgs}: {
+    devShells = forEachSupportedSystem ({
+      system,
+      pkgs,
+    }: {
       default = pkgs.mkShell {
         # The Nix packages provided in the environment
         # Add any you need here
-        packages = with pkgs; [(agda.withPackages (_: [cubical]))];
+        packages = [self.packages.${system}.agdaWithCubical];
 
         # Set any environment variables for your dev shell
         env = {};
@@ -46,6 +51,10 @@
         shellHook = ''
         '';
       };
+    });
+    packages = forEachSupportedSystem ({pkgs, ...}: {
+      agdaWithCubical = pkgs.agda.withPackages (_: [pkgs.cubical]);
+      default = pkgs.agdaWithCubical;
     });
   };
 }

@@ -103,6 +103,7 @@ module _ where
 
 open isICMS
 open import Cubical.Data.Nat using (isSetℕ)
+open import Cubical.Functions.FunExtEquiv using (funExtDep)
 
 private
   open RawICMS lam-ricms
@@ -118,7 +119,7 @@ private
   lam-isicms-↖-unit-l var {j} = funExt λ _ → isSetℕ _ _ _ _ 
   lam-isicms-↖-unit-l (app M N) {j} ι (inl p) = inl (funExtConstCod (congP (λ ι → lam-isicms-↖-unit-l M {j} ι)) ι p)
   lam-isicms-↖-unit-l (app M N) {j} ι (inr p) = inr (funExtConstCod (congP (λ ι → lam-isicms-↖-unit-l N {j} ι)) ι p) 
-  lam-isicms-↖-unit-l {i} (lam M) {j} = funExtConstCod (congP (λ ι → lam-isicms-↖-unit-l M {j} ι))
+  lam-isicms-↖-unit-l (lam M) = lam-isicms-↖-unit-l M 
 
   lam-isicms-•-assoc : ∀ {i}
       (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j)
@@ -131,30 +132,83 @@ private
     (lam-isicms-•-assoc N (inr » s′) (inr » s″))
   lam-isicms-•-assoc (lam M) s′ s″ = cong lam (lam-isicms-•-assoc M s′ s″)
 
-{-# TERMINATING #-}
+  lam-isicms-↖↑-↑-assoc : ∀ {i} {j}
+    (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j)
+    (s″ : {j : ℕ} {k : ℕ} (p : LamP s k) → LamP (s′ p) j → LamS j)
+    → PathP (λ ι → LamP (lam-isicms-•-assoc s s′ s″ ι) j → ℕ)
+    (lam-ricms-↖ (lam-ricms-• s s′) (smoosh {s = s} s″) » lam-ricms-↑ s s′)
+    (lam-ricms-↑ s (_Π•_ {s = s} s′  s″))
+  lam-isicms-↖↑-↑-assoc var s′ s″ = refl
+  lam-isicms-↖↑-↑-assoc (app M N) s′ s″ ι (inl p) = lam-isicms-↖↑-↑-assoc M (inl » s′) (inl » s″) ι p
+  lam-isicms-↖↑-↑-assoc (app M N) s′ s″ ι (inr p) = lam-isicms-↖↑-↑-assoc N (inr » s′) (inr » s″) ι p
+  lam-isicms-↖↑-↑-assoc (lam M) s′ s″ = lam-isicms-↖↑-↑-assoc M s′ s″
+
+  lam-isicms-↑-↗↑-assoc : ∀ {i} {j}
+    (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j)
+    (s″ : {j : ℕ} {k : ℕ} (p : LamP s k) → LamP (s′ p) j → LamS j)
+    → PathP (λ ι → LamP (lam-isicms-•-assoc s s′ s″ ι) j → ℕ)
+      (lam-ricms-↑ (lam-ricms-• s s′) (smoosh {s = s} s″))
+      (λ p → lam-ricms-↑ (s′ (lam-ricms-↖ s (_Π•_ {s = s} s′  s″) p)) (s″ (lam-ricms-↖ s (_Π•_ {s = s} s′  s″) p)) (lam-ricms-↗ s (_Π•_ {s = s} s′  s″) p))
+  lam-isicms-↑-↗↑-assoc var s′ s″ = refl
+  lam-isicms-↑-↗↑-assoc (app M N) s′ s″ ι (inl p) = lam-isicms-↑-↗↑-assoc M (inl » s′) (inl » s″) ι p
+  lam-isicms-↑-↗↑-assoc (app M N) s′ s″ ι (inr p) = lam-isicms-↑-↗↑-assoc N (inr » s′) (inr » s″) ι p
+  lam-isicms-↑-↗↑-assoc (lam M) s′ s″ = lam-isicms-↑-↗↑-assoc M s′ s″
+
+  lam-isicms-↖↖-↖-assoc : ∀ {i} {j}
+    (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j)
+    (s″ : {j : ℕ} {k : ℕ} (p : LamP s k) → LamP (s′ p) j → LamS j)
+    → PathP
+      (λ ι →
+         (p : LamP (lam-isicms-•-assoc s s′ s″ ι) j) →
+         LamP s (lam-isicms-↖↑-↑-assoc s s′ s″ ι p))
+      (lam-ricms-↖ (lam-ricms-• s s′) (smoosh {s = s} s″) » lam-ricms-↖ s s′) 
+      (lam-ricms-↖ s (_Π•_ {s = s} s′ s″))
+  lam-isicms-↖↖-↖-assoc var s′ s″ = refl
+  lam-isicms-↖↖-↖-assoc (app M N) s′ s″ ι (inl p) = inl (lam-isicms-↖↖-↖-assoc M (inl » s′) (inl » s″) ι p)
+  lam-isicms-↖↖-↖-assoc (app M N) s′ s″ ι (inr p) = inr (lam-isicms-↖↖-↖-assoc N (inr » s′) (inr » s″) ι p)
+  lam-isicms-↖↖-↖-assoc (lam M) = lam-isicms-↖↖-↖-assoc M
+
+  lam-isicms-↖↗-↗↖-assoc : ∀ {i} {j}
+    (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j)
+    (s″ : {j : ℕ} {k : ℕ} (p : LamP s k) → LamP (s′ p) j → LamS j) 
+    → PathP
+      (λ ι →
+         (p : LamP (lam-isicms-•-assoc s s′ s″ ι) j) →
+         LamP (s′ (lam-isicms-↖↖-↖-assoc s s′ s″ ι p))
+         (lam-isicms-↑-↗↑-assoc s s′ s″ ι p))
+      (λ p → lam-ricms-↗ s s′ (lam-ricms-↖ (lam-ricms-• s s′) (smoosh {s = s} s″) p))
+      (λ p →
+         lam-ricms-↖ (s′ (lam-ricms-↖ s (_Π•_ {s = s} s′ s″) p))
+         (s″ (lam-ricms-↖ s (_Π•_ {s = s} s′ s″) p)) (lam-ricms-↗ s (_Π•_ {s = s} s′ s″) p))
+  lam-isicms-↖↗-↗↖-assoc var s′ s″ = refl
+  lam-isicms-↖↗-↗↖-assoc (app M N) s′ s″ ι (inl p) = lam-isicms-↖↗-↗↖-assoc M (inl » s′) (inl » s″) ι p
+  lam-isicms-↖↗-↗↖-assoc (app M N) s′ s″ ι (inr p) = lam-isicms-↖↗-↗↖-assoc N (inr » s′) (inr » s″) ι p 
+  lam-isicms-↖↗-↗↖-assoc (lam M) = lam-isicms-↖↗-↗↖-assoc M
+
+  lam-isicms-↗-↗↗-assoc : ∀ {i} {j}
+    (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j)
+    (s″ : {j : ℕ} {k : ℕ} (p : LamP s k) → LamP (s′ p) j → LamS j) 
+    → PathP
+      (λ ι →
+         (p : LamP (lam-isicms-•-assoc s s′ s″ ι) j)
+         → LamP (s″ (lam-isicms-↖↖-↖-assoc s s′ s″ ι p) (lam-isicms-↖↗-↗↖-assoc s s′ s″ ι p)) j)
+      (lam-ricms-↗ (lam-ricms-• s s′) (smoosh {s = s} s″))
+      (λ p →
+         lam-ricms-↗ (s′ (lam-ricms-↖ s (_Π•_ {s = s} s′ s″) p))
+         (s″ (lam-ricms-↖ s (_Π•_ {s = s} s′ s″) p)) (lam-ricms-↗ s (_Π•_ {s = s} s′ s″) p))
+  lam-isicms-↗-↗↗-assoc var s′ s″ = refl
+  lam-isicms-↗-↗↗-assoc (app M N) s′ s″ ι (inl p) = lam-isicms-↗-↗↗-assoc M (inl » s′) (inl » s″) ι p
+  lam-isicms-↗-↗↗-assoc (app M N) s′ s″ ι (inr p) = lam-isicms-↗-↗↗-assoc N (inr » s′) (inr » s″) ι p
+  lam-isicms-↗-↗↗-assoc (lam M) = lam-isicms-↗-↗↗-assoc M
+
 lam-isicms : isICMS lam-ricms
-lam-isicms .e-unit-l s = lam-isicms-e-unit-l s
-lam-isicms .↖-unit-l {i} s = lam-isicms-↖-unit-l s
+lam-isicms .e-unit-l = lam-isicms-e-unit-l
+lam-isicms .↖-unit-l = lam-isicms-↖-unit-l
 lam-isicms .e-unit-r s = substRefl {B = LamS} s
 lam-isicms .↗-unit-r {i} s {j} ι p = transp (λ κ → LamP {n = i} (substRefl {B = LamS} s (ι ∨ κ)) j) ι p
 lam-isicms .•-assoc = lam-isicms-•-assoc
-lam-isicms .↑-↗↑-assoc {i} var s′ s″  = refl
-lam-isicms .↑-↗↑-assoc (app M N) s′ s″ ι (inl p) = lam-isicms .↑-↗↑-assoc M (inl » s′) (inl » s″) ι p
-lam-isicms .↑-↗↑-assoc (app M N) s′ s″ ι (inr p) = lam-isicms .↑-↗↑-assoc N (inr » s′) (inr » s″) ι p
-lam-isicms .↑-↗↑-assoc {i} {j} (lam M) s′ s″ ι p = lam-isicms .↑-↗↑-assoc M s′ s″ ι p 
-lam-isicms .↖↑-↑-assoc var s′ s″ = refl
-lam-isicms .↖↑-↑-assoc (app M N) s′ s″ ι (inl p) = lam-isicms .↖↑-↑-assoc M (inl » s′) (inl » s″) ι p
-lam-isicms .↖↑-↑-assoc (app M N) s′ s″ ι (inr p) = lam-isicms .↖↑-↑-assoc N (inr » s′) (inr » s″) ι p
-lam-isicms .↖↑-↑-assoc (lam M) s′ s″ ι p = lam-isicms .↖↑-↑-assoc M s′ s″ ι p
-lam-isicms .↖↖-↖-assoc var s′ s″ = refl
-lam-isicms .↖↖-↖-assoc (app M N) s′ s″ ι (inl p) = inl (lam-isicms .↖↖-↖-assoc M (inl » s′) (inl » s″) ι p)
-lam-isicms .↖↖-↖-assoc (app M N) s′ s″ ι (inr p) = inr (lam-isicms .↖↖-↖-assoc N (inr » s′) (inr » s″) ι p)
-lam-isicms .↖↖-↖-assoc (lam M) s′ s″ = {! !} --funExtConstCod (congP (λ ι → lam-isicms .↖↖-↖-assoc M s′ s″ ι)) 
-lam-isicms .↖↗-↗↖-assoc var s′ s″ = refl
-lam-isicms .↖↗-↗↖-assoc (app M N) s′ s″ ι (inl p) = lam-isicms .↖↗-↗↖-assoc M (inl » s′) (inl » s″) ι p
-lam-isicms .↖↗-↗↖-assoc (app M N) s′ s″ ι (inr p) = lam-isicms .↖↗-↗↖-assoc N (inr » s′) (inr » s″) ι p 
-lam-isicms .↖↗-↗↖-assoc (lam M) s′ s″ ι p = {! !} -- lam-isicms .↖↗-↗↖-assoc M s′ s″ ι p
-lam-isicms .↗-↗↗-assoc var s′ s″ = refl
-lam-isicms .↗-↗↗-assoc (app M N) s′ s″ ι (inl p) = lam-isicms .↗-↗↗-assoc M (inl » s′) (inl » s″) ι p
-lam-isicms .↗-↗↗-assoc (app M N) s′ s″ ι (inr p) = lam-isicms .↗-↗↗-assoc N (inr » s′) (inr » s″) ι p
-lam-isicms .↗-↗↗-assoc (lam M) s′ s″ ι p = {! !} -- lam-isicms .↗-↗↗-assoc M s′ s″ ι p
+lam-isicms .↑-↗↑-assoc = lam-isicms-↑-↗↑-assoc 
+lam-isicms .↖↑-↑-assoc = lam-isicms-↖↑-↑-assoc
+lam-isicms .↖↖-↖-assoc = lam-isicms-↖↖-↖-assoc
+lam-isicms .↖↗-↗↖-assoc = lam-isicms-↖↗-↗↖-assoc
+lam-isicms .↗-↗↗-assoc = lam-isicms-↗-↗↗-assoc 

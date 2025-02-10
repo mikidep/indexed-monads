@@ -9,6 +9,7 @@ import IndexedContainer as ICModule
 module IndexedMonad (I : Type) (T : ICModule.IndexedContainer I) where
 
 open ICModule I
+open import IndexedContainer.MonoidalCategory {I}
 
 open IndexedContainer T
 
@@ -240,4 +241,29 @@ module _ (icmon : RawICMonoid) where
   module _ (is-icmon : isICMonoid icmon) where
     inv-isICMonoid : (is-icmon € isICMonoid→isICMS icmon € isICMS→isICMonoid _) ≡ is-icmon
     inv-isICMonoid = refl
+
+open import Cubical.Foundations.Isomorphism
+open import Cubical.Foundations.Equiv
+open Iso
+
+RawICMonoid-iso-RawICMS : Iso RawICMonoid RawICMS
+RawICMonoid-iso-RawICMS .fun = RawICMonoid→RawICMS
+RawICMonoid-iso-RawICMS .inv = RawICMS→RawICMonoid
+RawICMonoid-iso-RawICMS .rightInv = inv-RawICMS
+RawICMonoid-iso-RawICMS .leftInv = inv-RawICMonoid
+
+ICMonoid-iso-ICMS : Iso (Σ RawICMonoid isICMonoid) (Σ RawICMS isICMS)
+ICMonoid-iso-ICMS = Σ-cong-iso RawICMonoid-iso-RawICMS eqns-iso
+  where
+  open import Cubical.Data.Sigma.Properties
+  eqns-iso : (mon : RawICMonoid) →
+     Iso (isICMonoid mon) (isICMS (RawICMonoid→RawICMS mon))
+  eqns-iso mon .fun = isICMonoid→isICMS mon
+  eqns-iso mon .inv = isICMS→isICMonoid (RawICMonoid→RawICMS mon)
+  eqns-iso mon .rightInv is-icms = inv-isICMS (RawICMonoid→RawICMS mon) is-icms
+  eqns-iso mon .leftInv is-icmon = inv-isICMonoid mon is-icmon
+
+ICMonoid≃ICMS : Σ RawICMonoid isICMonoid ≃ Σ RawICMS isICMS
+ICMonoid≃ICMS = isoToEquiv ICMonoid-iso-ICMS
+
 

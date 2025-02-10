@@ -1,7 +1,9 @@
 open import Prelude
 
-open import Cubical.Data.Nat
+open import Cubical.Data.Nat using (ℕ; zero; suc)
+open import Cubical.Data.Nat.Literals
 open import IndexedContainer ℕ
+open import Definitions ℕ
 
 module IndexedMonad.Examples.ScopedLambda where
 
@@ -49,21 +51,8 @@ open import Cubical.Data.Fin using (Fin)
 subst′ : {A : Type} (B : A → Type) {x y : A} → B x → x ≡ y → B y
 subst′ B bx p = subst B p bx
 
-infix 30 #_
-#_ : {x y : ℕ} → Fin x → x ≡ y → Fin y
-#_ = subst′ Fin
-
-λ1⟨00⟩ : ⟦ Lam ⟧ Fin 1
-λ1⟨00⟩ .fst = lam (app var (app var var))
-λ1⟨00⟩ .snd = [ # 1 , [ # 0 , # 0 ] ]
-
-Y-comb : ⟦ Lam ⟧ Fin 0
-Y-comb .fst = lam (app (λ1⟨00⟩ .fst) (λ1⟨00⟩ .fst))
-Y-comb .snd = [ λ1⟨00⟩ .snd , λ1⟨00⟩ .snd ]
-
-Y-comb² : ⟦ Lam ⟧ (⟦ Lam ⟧ Fin) 0
-Y-comb² .fst = lam (app var var)
-Y-comb² .snd = [ subst′ (⟦ Lam ⟧ Fin) λ1⟨00⟩ , subst′ (⟦ Lam ⟧ Fin) λ1⟨00⟩ ]
+sf : {x y : ℕ} → Fin x → x ≡ y → Fin y
+sf = subst′ Fin
 
 open import IndexedMonad ℕ Lam
 
@@ -73,19 +62,34 @@ private
   lam-ricms-• (app M N) σ = app (lam-ricms-• M (inl » σ)) (lam-ricms-• N (inr » σ))
   lam-ricms-• (lam M)   σ = lam (lam-ricms-• M σ)
   
-  lam-ricms-↑ : ∀ {i} (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j) {j : ℕ} (p : LamP (lam-ricms-• s s′) j) → ℕ
+  lam-ricms-↑ : ∀ {i} 
+    (s : LamS i) 
+    (s′ : {j : ℕ} → LamP s j → LamS j) 
+    {j : ℕ} 
+    (p : LamP (lam-ricms-• s s′) j) 
+    → ℕ
   lam-ricms-↑ {i} var _ _ = i
   lam-ricms-↑ (app M N) σ (inl p) = lam-ricms-↑ M (inl » σ) p
   lam-ricms-↑ (app M N) σ (inr p) = lam-ricms-↑ N (inr » σ) p 
   lam-ricms-↑ (lam M) σ p = lam-ricms-↑ M σ p
 
-  lam-ricms-↖ : ∀ {i} (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j) {j : ℕ} (p : LamP (lam-ricms-• s s′) j) → LamP s (lam-ricms-↑ s s′ p)
+  lam-ricms-↖ : ∀ {i} 
+    (s : LamS i) 
+    (s′ : {j : ℕ} → LamP s j → LamS j) 
+    {j : ℕ} 
+    (p : LamP (lam-ricms-• s s′) j) 
+    → LamP s (lam-ricms-↑ s s′ p)
   lam-ricms-↖ var σ p = refl
   lam-ricms-↖ (app M N) σ (inl p) = inl (lam-ricms-↖ M (inl » σ) p)
   lam-ricms-↖ (app M N) σ (inr p) = inr (lam-ricms-↖ N (inr » σ) p)
   lam-ricms-↖ (lam M) σ p = lam-ricms-↖ M σ p
 
-  lam-ricms-↗ : ∀ {i} (s : LamS i) (s′ : {j : ℕ} → LamP s j → LamS j) {j : ℕ} (p : LamP (lam-ricms-• s s′) j) → LamP (s′ (lam-ricms-↖ s s′ p)) j
+  lam-ricms-↗ : ∀ {i}
+    (s : LamS i) 
+    (s′ : {j : ℕ} → LamP s j → LamS j) 
+    {j : ℕ} 
+    (p : LamP (lam-ricms-• s s′) j) 
+    → LamP (s′ (lam-ricms-↖ s s′ p)) j
   lam-ricms-↗ var σ p = p
   lam-ricms-↗ (app M N) σ (inl p) = lam-ricms-↗ M (inl » σ) p
   lam-ricms-↗ (app M N) σ (inr p) = lam-ricms-↗ N (inr » σ) p
@@ -116,7 +120,7 @@ private
       PathP (λ z → LamP (lam-isicms-e-unit-l s z) j → LamP s j)
       (λ p → transp (λ i₁ → LamP s (lam-ricms-↗ s (λ {j = j₁} _ → var) p i₁)) i0 (lam-ricms-↖ s (λ _ → var) p))
       (λ p → p)
-  lam-isicms-↖-unit-l var {j} = funExt λ _ → isSetℕ _ _ _ _ 
+  lam-isicms-↖-unit-l {i} var {j} ι p = transp (λ κ → i ≡ p (ι ∨ κ)) ι (λ κ → p (ι ∧ κ))
   lam-isicms-↖-unit-l (app M N) {j} ι (inl p) = inl (funExtConstCod (congP (λ ι → lam-isicms-↖-unit-l M {j} ι)) ι p)
   lam-isicms-↖-unit-l (app M N) {j} ι (inr p) = inr (funExtConstCod (congP (λ ι → lam-isicms-↖-unit-l N {j} ι)) ι p) 
   lam-isicms-↖-unit-l (lam M) = lam-isicms-↖-unit-l M 
@@ -212,3 +216,59 @@ lam-isicms .↖↑-↑-assoc = lam-isicms-↖↑-↑-assoc
 lam-isicms .↖↖-↖-assoc = lam-isicms-↖↖-↖-assoc
 lam-isicms .↖↗-↗↖-assoc = lam-isicms-↖↗-↗↖-assoc
 lam-isicms .↗-↗↗-assoc = lam-isicms-↗-↗↗-assoc 
+
+-- module IwilareDeBruijn where
+--
+--   infix  9  #_
+--   infixl 7  _·_
+--   infix  6  ƛ_
+--
+--   data Term : ℕ → Set where
+--     #_  : ∀ {n : ℕ} → Fin n           → Term n
+--     ƛ_  : ∀ {n : ℕ} → Term (suc n)    → Term n
+--     _·_ : ∀ {n : ℕ} → Term n → Term n → Term n
+--
+  -- open import Cubical.Foundations.Isomorphism
+  -- open Iso
+  -- open import Cubical.Data.Sigma using (ΣPathP)
+  --
+  -- {-# TERMINATING #-}
+  -- Term-LamFin-iso : ∀ n → Iso (Term n) (⟦ Lam ⟧ Fin n)
+  -- Term-LamFin-iso n .fun = f n
+  --   where
+  --   f : ∀ n → Term n → ⟦ Lam ⟧ Fin n 
+  --   f n (# x) = var , sf x
+  --   f n (ƛ t) = let (s , px) = f (suc n) t in lam s , px
+  --   f n (t · q) = 
+  --     let
+  --       s  , px  = f n t
+  --       s′ , px′ = f n q
+  --     in app s s′ , [ px , px′ ]
+  -- Term-LamFin-iso n .inv = g n
+  --   where
+  --   g : ∀ n → ⟦ Lam ⟧ Fin n → Term n
+  --   g n (var , px) = # px refl
+  --   g n (app M N , px) = g n (M , inl » px) · g n (N , inr » px)
+  --   g n (lam M , px) = ƛ g (suc n) (M , px)
+  -- Term-LamFin-iso n .rightInv (var , px) = ΣPathP (refl , implicitFunExt λ {_} → funExt λ p → λ ι → transp (λ κ → Fin (p (ι ∨ κ))) ι (px (λ κ → p (ι ∧ κ))))
+  -- Term-LamFin-iso n .rightInv (app s s₁ , px) = {! !}
+  -- Term-LamFin-iso n .rightInv (lam s , px) = {! !}
+  -- Term-LamFin-iso n .leftInv (# x) = cong #_ (substRefl {B = Fin} x)
+  -- Term-LamFin-iso n .leftInv (ƛ t) = {! !}
+  -- Term-LamFin-iso n .leftInv (t · t₁) = {! !}
+
+module MakeSense where
+  Term = ⟦ Lam ⟧ Fin
+
+  λ1⟨00⟩ : Term 1
+  λ1⟨00⟩ .fst = lam (app var (app var var))
+  λ1⟨00⟩ .snd = [ sf 1 , [ sf 0 , sf 0 ] ]
+
+  Y-comb : Term 0
+  Y-comb .fst = lam (app (λ1⟨00⟩ .fst) (λ1⟨00⟩ .fst))
+  Y-comb .snd = [ λ1⟨00⟩ .snd , λ1⟨00⟩ .snd ]
+
+  Y-comb² : ⟦ Lam ⟧ (Term) 0
+  Y-comb² .fst = lam (app var var)
+  Y-comb² .snd = [ subst′ Term λ1⟨00⟩ , subst′ Term λ1⟨00⟩ ]
+

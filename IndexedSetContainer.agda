@@ -73,10 +73,7 @@ open IC._Π⇒_
 
 module _ (F G : IndexedSetContainer)  where
   ext-mor : (F ⇒ G) → SetIEndo [ ext-ob F , ext-ob G ]
-  ext-mor α .N-ob = compute 
-    where
-    compute : (X : ISet) → ext-ob F .F-ob X is→ ext-ob G .F-ob X 
-    compute X i (s , v) = α i s .σs , α i s .πs » v
+  ext-mor α .N-ob X = IC.⟦⇒⟧ α (itype X)
   ext-mor α .N-hom _ = refl
 
   open import Cubical.Foundations.Isomorphism
@@ -88,8 +85,6 @@ module _ (F G : IndexedSetContainer)  where
     open import Cubical.Categories.Yoneda
     ⟦G⟧ : ISet → ISet
     ⟦G⟧ = ext-ob G .F-ob
-    -- Endofunctors [ Set^I , Set^I ] can be seen as PSh(Set^I × I),
-    -- in this view this is probably good old fashioned Yoneda lemma.
     yo→ :
       (∀ (X : SetI .ob) → (F .hP s is→ X) → ⟦G⟧ X i .fst)
       → ⟦G⟧ (F .hP s) i .fst 

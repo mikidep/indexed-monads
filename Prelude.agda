@@ -79,3 +79,14 @@ module _ where
     J₂ : {y : A} (p : x ≡ y) {w : A′} (q : z ≡ w)
       → P y p w q
     J₂ p = J ΠP (λ _ → J (P x refl) d) p _  
+
+module _ (A : Type) (P : A → Type) (x : A) where
+  open import Cubical.Foundations.Isomorphism
+  open Iso
+
+  JIso : Iso (∀ y → x ≡ y → P y) (P x)
+  JIso .fun f = f x refl
+  JIso .inv px _ p = subst P p px
+  JIso .rightInv b = substRefl {B = P} b
+  JIso .leftInv a ι y p = transp (λ i → P (p (i ∨ ι))) ι (a (p ι) λ i → p (i ∧ ι)
+

@@ -88,5 +88,5 @@ module _ (A : Type) (P : A → Type) (x : A) where
   JIso .fun f = f x refl
   JIso .inv px _ p = subst P p px
   JIso .rightInv b = substRefl {B = P} b
-  JIso .leftInv a ι y p = transp (λ i → P (p (i ∨ ι))) ι (a (p ι) λ i → p (i ∧ ι)
+  JIso .leftInv a ι y p = transp (λ i → P (p (i ∨ ι))) ι (a (p ι) λ i → p (i ∧ ι))
 

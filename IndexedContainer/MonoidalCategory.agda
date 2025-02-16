@@ -29,6 +29,17 @@ module _ where
         Gsp = Ksp→Gsp Kp
       in k , Gsp , α _ (Gsp→Fs Gsp) .snd Hp
 
+  module _ {F F′ : IndexedContainer} where
+    ⊗₁-id : id₁ F ⊗₁ id₁ F′ ≡ id₁ (F ⊗ F′)
+    ⊗₁-id = refl
+
+  module _ {F F′ G G′ H H′ : IndexedContainer}
+    (α  : F ⇒ G)   (β  : G ⇒ H)
+    (α′ : F′ ⇒ G′) (β′ : G′ ⇒ H′)
+    where
+    ⊗₁-; : (α ; β) ⊗₁ (α′ ; β′) ≡ (α ⊗₁ α′) ; (β ⊗₁ β′)
+    ⊗₁-; = refl
+
   module _ {F G} (α : F ⇒ G) where
     record ⇒isIso : Type where
       field
@@ -41,7 +52,6 @@ module _ {F : IndexedContainer} where
   open import Cubical.Data.Sigma using (ΣPathP)
 
   open IndexedContainer F
---   open ⇒isIso
 
   unitor-l : (idᶜ ⊗ F) ⇒ F
   unitor-l _ (s , _) = s , λ {j} p → j , p , refl

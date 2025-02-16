@@ -78,7 +78,6 @@
           agda-index ${docs}/ | fzf -d' ' --with-nth='2' | cut -d' ' -f1 | xargs -I % firefox --new-window %
         '';
       };
-      default = pkgs.agdaWithCubical;
     });
   };
 }

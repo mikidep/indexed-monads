@@ -19,11 +19,15 @@ module _ where
 
   module _ {F G H K : IndexedContainer} where
     _⊗₁_ : (α : F ⇒ H) (β : G ⇒ K) → (F ⊗ G) ⇒ (H ⊗ K)
-    (α ⊗₁ β) _ (Gs , Gsp→Fs) .σs = β _ Gs .σs , λ p → α _ (Gsp→Fs (β _ Gs .πs p)) .σs 
-    (α ⊗₁ β) _ (Gs , Gsp→Fs) .πs (k , Kp , Hp) = let
-        Gsp = β _ Gs .πs Kp
-      in k , Gsp , α _ (Gsp→Fs Gsp) .πs Hp
-
+    _⊗₁_ α β _ (Gs , Gsp→Fs) .fst = 
+      let 
+        Ks , Ksp→Gsp = β _ Gs
+      in (Ks , λ Ksp → α _ (Gsp→Fs (Ksp→Gsp Ksp)) .fst) 
+    _⊗₁_ α β _ (Gs , Gsp→Fs) .snd (k , Kp , Hp) = 
+      let 
+        Ks , Ksp→Gsp = β _ Gs
+        Gsp = Ksp→Gsp Kp
+      in k , Gsp , α _ (Gsp→Fs Gsp) .snd Hp
 
   module _ {F G} (α : F ⇒ G) where
     record ⇒isIso : Type where
@@ -37,21 +41,20 @@ module _ {F : IndexedContainer} where
   open import Cubical.Data.Sigma using (ΣPathP)
 
   open IndexedContainer F
-  open ⇒isIso
+--   open ⇒isIso
 
   unitor-l : (idᶜ ⊗ F) ⇒ F
-  unitor-l _ (s , _) .σs = s
-  unitor-l i (s , _) .πs {j} p = j , p , refl
+  unitor-l _ (s , _) = s , λ {j} p → j , p , refl
 
   unitor-l-inv : F ⇒ (idᶜ ⊗ F)
-  unitor-l-inv _ s .σs = s , _
-  unitor-l-inv _ s .πs (k , p , k≡j) = subst (P s) k≡j p
+  unitor-l-inv _ s .fst = s , _
+  unitor-l-inv _ s .snd (k , p , k≡j) = subst (P s) k≡j p
 
   unitor-l-inv-l : Path ((idᶜ ⊗ F) ⇒ (idᶜ ⊗ F)) (unitor-l ; unitor-l-inv) (id₁ (idᶜ ⊗ F))
   unitor-l-inv-l =
-    ⇒PathP λ { (s , _) → Π⇒PathP
-      (ΣPathP (refl , refl))
-      ( implicitFunExt λ {j} →
+    ⇒PathP λ { _ (s , _) → ΣPathP
+      ( ΣPathP (refl , refl) 
+      , implicitFunExt λ {j} →
         funExt λ { (k , p , k≡j) → ΣPathP
           ( sym k≡j
           , ΣPathP
@@ -64,12 +67,12 @@ module _ {F : IndexedContainer} where
     }
 
   unitor-r : (F ⊗ idᶜ) ⇒ F
-  unitor-r _ (_ , si) .σs = si refl
-  unitor-r i (_ , si) .πs p = i , refl , p
+  unitor-r _ (_ , si) .fst = si refl
+  unitor-r i (_ , si) .snd p = i , refl , p
 
   unitor-r-inv : F ⇒ (F ⊗ idᶜ) 
-  unitor-r-inv _ s .σs = _ , λ i≡j → subst S i≡j s
-  unitor-r-inv i s .πs {j} (k , i≡k , p) = 
+  unitor-r-inv _ s .fst = _ , λ i≡j → subst S i≡j s
+  unitor-r-inv i s .snd {j} (k , i≡k , p) = 
     transport P≡ p
     where
     P≡ : P {k} (subst S i≡k s) j ≡ P {i} s j
@@ -84,8 +87,8 @@ module _ {F : IndexedContainer} where
 
 module _ {F G H : IndexedContainer} where
   associator : (F ⊗ (G ⊗ H)) ⇒ ((F ⊗ G) ⊗ H)
-  associator _ ((s″ , op″) , op′) .σs  = s″ , λ {j} p″ → op″ p″ , λ p′ → op′ (j , p″ , p′)
-  associator _ ((s″ , op″) , op′) .πs  (k , (p″ , (j , p′ , p))) = j , (k , p″ , p′) , p
+  associator _ ((s″ , op″) , op′) .fst  = s″ , λ {j} p″ → op″ p″ , λ p′ → op′ (j , p″ , p′)
+  associator _ ((s″ , op″) , op′) .snd  (k , (p″ , (j , p′ , p))) = j , (k , p″ , p′) , p
 
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ⊗ IC

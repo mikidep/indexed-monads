@@ -163,26 +163,22 @@ module _ (icms : RawICMS) where
   open RawICMonoid
 
   RawICMS→RawICMonoid : RawICMonoid
-  RawICMS→RawICMonoid .η i _ .σs = e i
-  RawICMS→RawICMonoid .η _ _ .πs p = P-e-idx p
-  RawICMS→RawICMonoid .μ _ (s , s′) .σs = s • s′
-  RawICMS→RawICMonoid .μ _ (_ , s′) .πs p = s′ ↑ p , s′ ↖ p , s′ ↗ p
+  RawICMS→RawICMonoid .η i _ .fst = e i
+  RawICMS→RawICMonoid .η _ _ .snd p = P-e-idx p
+  RawICMS→RawICMonoid .μ _ (s , s′) .fst = s • s′
+  RawICMS→RawICMonoid .μ _ (_ , s′) .snd p = s′ ↑ p , s′ ↖ p , s′ ↗ p
 
   open isICMonoid
 
   module _ (is-icms : isICMS icms) where
     open isICMS is-icms
+    open import Cubical.Functions.FunExtEquiv using (funExt₂)
 
     isICMS→isICMonoid : isICMonoid RawICMS→RawICMonoid
-    isICMS→isICMonoid .η-unit-l = ⇒PathP λ s → Π⇒PathP
-      (e-unit-l s)
-      (implicitFunExt λ {j} → ↖-unit-l s)
-    isICMS→isICMonoid .η-unit-r = ⇒PathP λ {i} s → Π⇒PathP
-      (e-unit-r s)
-      (implicitFunExt λ {j} → ↗-unit-r s)
-    isICMS→isICMonoid .μ-assoc = ⇒PathP λ { ((s , s′) , s″) → Π⇒PathP
-        (•-assoc s s′ (curry″ s″))
-        (implicitFunExt λ {j} →
+    isICMS→isICMonoid .η-unit-l = funExt₂ λ i s → ΣPathP (e-unit-l s , implicitFunExt λ {j} → ↖-unit-l s)
+    isICMS→isICMonoid .η-unit-r = funExt₂ λ i s → ΣPathP (e-unit-r s , implicitFunExt λ {j} → ↗-unit-r s)
+    isICMS→isICMonoid .μ-assoc = funExt₂ λ { i ((s , s′) , s″) → ΣPathP 
+        (•-assoc s s′ (curry″ s″) , implicitFunExt λ {j} →
           λ { ι p →
               ↑-↗↑-assoc s s′ (curry″ s″) ι p 
             , ( ↖↑-↑-assoc s s′ (curry″ s″) ι p 
@@ -201,16 +197,16 @@ module _ (icmon : RawICMonoid) where
     open RawICMS
 
     RawICMonoid→RawICMS : RawICMS
-    RawICMonoid→RawICMS .e i = η i _ .σs
-    RawICMonoid→RawICMS .P-e-idx {i} p = η i _ .πs p
-    RawICMonoid→RawICMS ._•_ {i} s s′ = μ i (s , s′) .σs
-    RawICMonoid→RawICMS ._↑_ {i} {s} s′ p = μ i (s , s′) .πs p .fst
-    RawICMonoid→RawICMS ._↖_ {i} {s} s′ p = μ i (s , s′) .πs p .snd .fst
-    RawICMonoid→RawICMS ._↗_ {i} {s} s′ p = μ i (s , s′) .πs p .snd .snd
+    RawICMonoid→RawICMS .e i = η i _ .fst
+    RawICMonoid→RawICMS .P-e-idx {i} p = η i _ .snd p
+    RawICMonoid→RawICMS ._•_ {i} s s′ = μ i (s , s′) .fst
+    RawICMonoid→RawICMS ._↑_ {i} {s} s′ p = μ i (s , s′) .snd p .fst
+    RawICMonoid→RawICMS ._↖_ {i} {s} s′ p = μ i (s , s′) .snd p .snd .fst
+    RawICMonoid→RawICMS ._↗_ {i} {s} s′ p = μ i (s , s′) .snd p .snd .snd
 
   module _ (is-icmon : isICMonoid icmon) where
     open RawICMS RawICMonoid→RawICMS
-    
+
     open isICMS
     open isICMonoid is-icmon
 

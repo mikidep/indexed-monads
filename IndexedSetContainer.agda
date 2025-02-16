@@ -41,8 +41,7 @@ F ⇒ G = ic F IC.⇒ ic G
 module _ (F G : IndexedSetContainer) where
   open import Cubical.Foundations.Isomorphism
   isSet-⇒ : isSet (F ⇒ G)
-  isSet-⇒ = isSetΠ2 (λ i s → isOfHLevelRespectEquiv 2
-      (isoToEquiv (invIso IC.Π⇒IsoΣ)) 
+  isSet-⇒ = isSetΠ2 (λ i s →  
       (isSetΣ (G .hS i .snd) λ _ → isSetImplicitΠ λ _ → isSet→ (F .hP s _ .snd))
     )
 
@@ -69,7 +68,6 @@ ext-ob F .F-seq _ _ = refl
 
 open import Cubical.Categories.NaturalTransformation.Base hiding (_⇒_)
 open NatTrans 
-open IC._Π⇒_
 
 module _ (F G : IndexedSetContainer)  where
   ext-mor : (F ⇒ G) → SetIEndo [ ext-ob F , ext-ob G ]
@@ -80,7 +78,7 @@ module _ (F G : IndexedSetContainer)  where
   open import Cubical.Functions.FunExtEquiv
   open import Cubical.Foundations.Equiv using (invEq)
   ext-mor-inv : SetIEndo [ ext-ob F , ext-ob G ] → F ⇒ G
-  ext-mor-inv α i s = record { σs = repr .fst ; πs = repr .snd }
+  ext-mor-inv α i s = goal
     where
     open import Cubical.Categories.Yoneda
     ⟦G⟧ : ISet → ISet
@@ -89,8 +87,8 @@ module _ (F G : IndexedSetContainer)  where
       (∀ (X : SetI .ob) → (F .hP s is→ X) → ⟦G⟧ X i .fst)
       → ⟦G⟧ (F .hP s) i .fst 
     yo→ nat = nat (F .hP s) (SetI .id {F .hP s})
-    repr : ⟦G⟧ (F .hP s) i .fst
-    repr = yo→ λ X FP→X → α .N-ob X i (s , (λ {j} → FP→X j))
+    goal : ⟦G⟧ (F .hP s) i .fst
+    goal = yo→ λ X FP→X → α .N-ob X i (s , (λ {j} → FP→X j))
 
   iso-ext-mor : Iso (F ⇒ G) (SetIEndo [ ext-ob F , ext-ob G ])
   iso-ext-mor .Iso.fun = ext-mor
@@ -103,7 +101,7 @@ module _ (F G : IndexedSetContainer)  where
         in 
           sym $ invEq funExt₂Equiv α□v i (s , λ p → p)
      })
-  iso-ext-mor .Iso.leftInv α = IC.⇒PathP λ _ → refl
+  iso-ext-mor .Iso.leftInv α = IC.⇒PathP λ _ _ → refl
 
 ext : Functor ISCCat SetIEndo
 ext .F-ob = ext-ob

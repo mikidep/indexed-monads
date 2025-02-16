@@ -13,79 +13,57 @@ record IndexedContainer  : Type₁ where
     S : (i : I) → Type
     P : {i : I} → S i → (j : I) → Type
 
-module _ where
-  open IndexedContainer
+open IndexedContainer
 
-  substP : (F : IndexedContainer) {i : I} {s s′ : F .S i} {j : I} (s≡s′ : s ≡ s′)  
-    → F .P s j → F .P s′ j
-  substP F {j = j} = subst (λ s → F .P s j)
+substP : (F : IndexedContainer) {i : I} {s s′ : F .S i} {j : I} (s≡s′ : s ≡ s′)  
+  → F .P s j → F .P s′ j
+substP F {j = j} = subst (λ s → F .P s j)
 
-  record _Π⇒_ (F G : IndexedContainer) {i : I} (s : F .S i) : Type where
-    field
-      σs : G .S i
-      πs : ∀ {j} → G .P σs j → F .P s j
+module _ {F G : IndexedContainer} {i : I} {s : F .S i} where
+  open import Cubical.Foundations.Isomorphism
+  open Iso
 
-  open _Π⇒_ public
+module _ (F : IndexedContainer) where
+  ⟦_⟧ : (I → Type) → (I → Type)
+  ⟦_⟧ X i = Σ[ s ∈ F .S i ] (∀ {j} (p : F .P s j) → X j)
 
-  module _ {F G : IndexedContainer} {i : I} {s : F .S i} where
-    open import Cubical.Foundations.Isomorphism
-    open Iso
+module _ (F : IndexedContainer) where
+  _⟦$⟧_ : {X Y : I → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ F ⟧ X i → ⟦ F ⟧ Y i)
+  _⟦$⟧_ f i (s , v) = s , λ {j} p → f j (v p)
 
-    Π⇒IsoΣ : Iso ((F Π⇒ G) s) (Σ (G .S i) (λ σs → ∀ {j} → G .P σs j → F .P s j))
-    Π⇒IsoΣ .fun x = x .σs , x .πs
-    Π⇒IsoΣ .inv (σs , πs) = record { σs = σs ; πs = πs }
-    Π⇒IsoΣ .rightInv _ = refl
-    Π⇒IsoΣ .leftInv _ = refl
+_⇒_ : (F G : IndexedContainer) → Type
+F ⇒ G = (i : I) (s : F .S i) → ⟦ G ⟧ (F .P s) i
 
-  module _ {F G : IndexedContainer} {i : I} {s : F .S i} {α β : (F Π⇒ G) s} where
-    Π⇒PathP : 
-      (≡σs : α .σs ≡ β .σs)
-      (≡πs : PathP {ℓ-zero} (λ ι → ∀ {j} → G .P (≡σs ι) j → F .P s j) (α .πs) (β .πs))
-      → α ≡ β
-    Π⇒PathP ≡σs ≡πs ι .σs = ≡σs ι
-    Π⇒PathP ≡σs ≡πs ι .πs = ≡πs ι
+module _
+  {F G : IndexedContainer}
+  (α : F ⇒ G) where
 
-  _⇒_ : (F G : IndexedContainer) → Type
-  F ⇒ G = (i : I) (s : F .S i) → (F Π⇒ G) s
+  ⟦⇒⟧ : (X : IType) → ⟦ F ⟧ X i→ ⟦ G ⟧ X 
+  ⟦⇒⟧ X i (s , px) = let s′ , pp = α i s in s′ , pp » px
 
-  module _ {F G : IndexedContainer} {α β : F ⇒ G} where
-    ⇒PathP :
-      (Π≡ : {i : I} (s : F .S i) → α i s ≡ β i s)
-      → α ≡ β
-    ⇒PathP Π≡ ι i s = Π≡ s ι
+module _ {F G : IndexedContainer} {α β : F ⇒ G} where
+  ⇒PathP :
+    (hom : (i : I) (s : F .S i) → α i s ≡ β i s)
+    → Path (F ⇒ G) α β
+  ⇒PathP hom = funExt₂ hom
 
-  module _ {F G : IndexedContainer} {α β : F ⇒ G} (α≡β : α ≡ β) where
-    σs≡ : {i : I} (s : F .S i) → α i s .σs ≡ β i s .σs
-    σs≡ s ι = α≡β ι _ s .σs
+module _ {F G : IndexedContainer} {α β : F ⇒ G} (α≡β : α ≡ β) where
+  σs≡ : {i : I} (s : F .S i) → α i s .fst ≡ β i s .fst
+  σs≡ s ι = α≡β ι _ s .fst
 
-    πs≡ : {i : I} (s : F .S i) {j : I}
-      → PathP {ℓ-zero} (λ ι → G .P (σs≡ s ι) j → F .P s j) (α i s .πs) (β i s .πs)
-    πs≡ s ι = α≡β ι _ s .πs
+  πs≡ : {i : I} (s : F .S i) {j : I}
+    → PathP {ℓ-zero} (λ ι → G .P (σs≡ s ι) j → F .P s j) (α i s .snd) (β i s .snd)
+  πs≡ s ι = α≡β ι _ s .snd
 
-  module _ (F : IndexedContainer) where
-    id₁ : F ⇒ F 
-    id₁ _ s .σs = s
-    id₁ _ s .πs = idfun _
-
-  module _ (F : IndexedContainer) where
-    ⟦_⟧ : (I → Type) → (I → Type)
-    ⟦_⟧ X i = Σ[ s ∈ F .S i ] (∀ {j} (p : F .P s j) → X j)
-
-  module _ (F : IndexedContainer) where
-    _⟦$⟧_ : {X Y : I → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ F ⟧ X i → ⟦ F ⟧ Y i)
-    _⟦$⟧_ f i (s , v) = s , λ {j} p → f j (v p)
-
-  module _
-    {F G : IndexedContainer}
-    (α : F ⇒ G) where
-
-   ⟦⇒⟧ : (X : IType) → ⟦ F ⟧ X i→ ⟦ G ⟧ X 
-   ⟦⇒⟧ X i (s , v) = α i s .σs , α i s .πs » v
+module _ (F : IndexedContainer) where
+  id₁ : F ⇒ F 
+  id₁ _ s = (s , idfun _)
 
 module _ {F G H : IndexedContainer} where
   infixl 20 _;_
   _;_ : (α : F ⇒ G) (β : G ⇒ H) → (F ⇒ H)
-  (α ; β) _ s .σs   = β _ (α _ s .σs) .σs 
-  (α ; β) _ s .πs p = α _ s .πs (β _ (α _ s .σs) .πs p)
-
+  _;_ α β i s = let
+      s′ , v′ = α i s
+      s″ , v″ = β i s′
+    in s″ , v″ » v′
 

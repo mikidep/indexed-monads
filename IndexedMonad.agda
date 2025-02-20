@@ -153,6 +153,77 @@ record isICMS (raw : RawICMS) : Type where
         (λ p → smoosh s″ ↗ p)
         (λ p → s″ (s′ Π• s″ ↖ p) ↗ (s′ Π• s″ ↗ p))
 
+record isICMS′ (raw : RawICMS) : Type where
+  open RawICMS raw
+  field
+    e-unit-l : ∀ {i} (s : S i)
+      → s • const-e ≡ s 
+
+    ↖-unit-l : ∀ {i} (s : S i) {j : I} (p : P (s • const-e) j)
+      → PathP (λ ι → P (e-unit-l s (~ ι)) (P-e-idx (const-e ↗ p) ι))
+         (const-e ↖ p) p
+
+    e-unit-r : ∀ {i} (s : S i)
+      → e i • (substS-Pe s) ≡ s
+
+    ↗-unit-r : ∀ {i} (s : S i) {j}
+      → (p : P (e i • substS-Pe s) j)
+      → PathP (λ ι →
+          let
+            eq : i ≡ substS-Pe s ↑ p
+            eq = P-e-idx (substS-Pe s ↖ p)
+          in P (transp (λ κ → S (eq (ι ∧ κ))) (~ ι) (e-unit-r s ι)) j)
+        p
+        (substS-Pe s ↗ p)
+
+    •-assoc : ∀ {i} 
+      (s : S i)
+      (s′ : {j : I} → P s j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
+      → s • s′ • smoosh s″ ≡ s • (s′ Π• s″)
+
+    -- new
+    ↑-↗↑-assoc : ∀ {i} {j} 
+      (s : S i)
+      (s′ : {j : I} → P s j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
+      → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → I) 
+        (λ p → smoosh s″ ↑ p)
+        (λ p → s″ (s′ Π• s″ ↖ p) ↑ (s′ Π• s″ ↗ p)) 
+
+    -- new
+    ↖↑-↑-assoc : ∀ {i} {j} 
+      (s : S i)
+      (s′ : {j : I} → P s j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
+      → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → I) 
+          (λ p → s′ ↑ (smoosh s″ ↖ p))
+          (λ p → s′ Π• s″ ↑ p)
+
+    ↖↖-↖-assoc : ∀ {i} {j} 
+      (s : S i)
+      (s′ : {j : I} → P s j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
+      → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → P s (↖↑-↑-assoc s s′ s″ ι p)) 
+        (λ p → s′ ↖ (smoosh s″ ↖ p))
+        (λ p → s′ Π• s″ ↖ p)
+
+    ↖↗-↗↖-assoc : ∀ {i} {j} 
+      (s : S i)
+      (s′ : {j : I} → P s j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
+      → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → P (s′ (↖↖-↖-assoc s s′ s″ ι p)) (↑-↗↑-assoc s s′ s″ ι p)) 
+        (λ p → s′ ↗ (smoosh s″ ↖ p))
+        (λ p → s″ (s′ Π• s″ ↖ p) ↖ (s′ Π• s″ ↗ p)) 
+
+    ↗-↗↗-assoc : ∀ {i} {j} 
+      (s : S i)
+      (s′ : {j : I} → P s j → S j)
+      (s″ : {j : I} → ∀ {k} (p : P s k) → P (s′ p) j → S j)
+      → PathP (λ ι → (p : P (•-assoc s s′ s″ ι) j) → P (s″ (↖↖-↖-assoc s s′ s″ ι p) (↖↗-↗↖-assoc s s′ s″ ι p)) j)
+        (λ p → smoosh s″ ↗ p)
+        (λ p → s″ (s′ Π• s″ ↖ p) ↗ (s′ Π• s″ ↗ p))
+
 record ICMS : Type where
   field
     icms : RawICMS

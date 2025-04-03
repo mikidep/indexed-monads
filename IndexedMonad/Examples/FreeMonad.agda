@@ -1,7 +1,9 @@
 open import Prelude
 import IndexedContainer as IC
 
-module IndexedMonad.Examples.FreeMonad {I : Type} (ic : IC.IndexedContainer I) where
+module IndexedMonad.Examples.FreeMonad {I : Type} 
+  (ic : IC.IndexedContainer I) 
+  (issS : ∀ {i} → isSet (IC.IndexedContainer.S ic i)) where
 
 open import IndexedContainer I
 open IndexedContainer ic
@@ -9,6 +11,19 @@ open IndexedContainer ic
 data S* (i : I) : Type where
   η : S* i
   sup : ⟦ ic ⟧ S* i → S* i
+
+open import Cubical.Relation.Nullary
+open import Cubical.Data.Empty
+
+caseS* : ∀ {ℓ} → {A : Type ℓ} → (aη asup : A) → ∀ {i} → S* i → A
+caseS* aη asup η = aη
+caseS* aη asup (sup _) = asup
+
+isSetS* : ∀ {i} → isSet (S* i)
+isSetS* η η = {! !}
+isSetS* {i} η (sup x) eq = subst (caseS* (S* i) _) eq η
+isSetS* {i} (sup x) η eq = subst (caseS* _ (S* i)) eq (sup x)
+isSetS* (sup x) (sup y) = {! !}
 
 P* : ∀ {i} → S* i → I → Type
 P* {i} η j = i ≡ j
@@ -95,33 +110,47 @@ private
       (λ ι → P* (substRefl {B = S*} (substRefl {B = S*} s ι) (~ ι)) j)
       p p
 
-  -- FM-isicms-↗-unit-r s p = {!   !}
-
   FM-isicms-↗-unit-r {i} s {j} p = toPathP
     (cong (λ s≡s → subst (λ s → P* s j) s≡s p) aux ∙ substRefl {B = λ s → P* s j} p)
     where
     open import Cubical.Foundations.Path
     aux : (λ ι → transp (λ _ → S* i) (~ ι) (transp (λ _ → S* i) ι s)) ≡ refl
-    aux κ ι = {!transp (λ _ → S* i) (~ ι) (transp (λ _ → S* i) (ι) s)!}
+    aux = isSetS* _ _ _ _
 
   FM-isicms-•-assoc : ∀ {i}
       (s : S* i) (s′ : {j : I} → P* s j → S* j)
       (s″ : {j k : I} (p : P* s k) → P* (s′ p) j → S* j) →
       FM-ricms-• (FM-ricms-• s s′) (smoosh {s = s} s″) ≡
       FM-ricms-• s (_Π•_ {s = s} s′ s″)
-  FM-isicms-•-assoc = {! !}
+  FM-isicms-•-assoc η s′ s″ = refl
+  FM-isicms-•-assoc (sup (s , ps*)) s′ s″ = cong sup
+    (ΣPathP
+      ( refl
+      , implicitFunExt (funExt λ p → 
+          FM-isicms-•-assoc (ps* p) (λ p* → s′ (_ , p , p*)) (λ p* → s″ (_ , p , p*))
+        )
+      )
+    )
+
+  FM-isicms-↑-↗↑-assoc : ∀ {i} {j}
+    (s : S* i) (s′ : {j : I} → P* s j → S* j)
+    (s″ : {j : I} {k : I} (p : P* s k) → P* (s′ p) j → S* j)
+    → PathP (λ ι → P* (FM-isicms-•-assoc s s′ s″ ι) j → I)
+      (FM-ricms-↑ (FM-ricms-• s s′)
+       (λ p → s″ (FM-ricms-↖ s s′ p) (FM-ricms-↗ s s′ p)))
+      (λ p →
+         FM-ricms-↑
+         (s′ (FM-ricms-↖ s (λ p₁ → FM-ricms-• (s′ p₁) (s″ p₁)) p))
+         (s″ (FM-ricms-↖ s (λ p₁ → FM-ricms-• (s′ p₁) (s″ p₁)) p))
+         (FM-ricms-↗ s (λ p₁ → FM-ricms-• (s′ p₁) (s″ p₁)) p))
+  FM-isicms-↑-↗↑-assoc η s′ s″ = refl
+  FM-isicms-↑-↗↑-assoc (sup (s , ps*)) s′ s″ ι (j , p , p*) = {! !}
 
   FM-isicms-↖↑-↑-assoc : ∀ {i} {j}
     (s : S* i) (s′ : {j : I} → P* s j → S* j)
     (s″ : {j : I} {k : I} (p : P* s k) → P* (s′ p) j → S* j)
     → {! !}
   FM-isicms-↖↑-↑-assoc = {! !}
-
-  FM-isicms-↑-↗↑-assoc : ∀ {i} {j}
-    (s : S* i) (s′ : {j : I} → P* s j → S* j)
-    (s″ : {j : I} {k : I} (p : P* s k) → P* (s′ p) j → S* j)
-    → {! !}
-  FM-isicms-↑-↗↑-assoc = {! !}
 
   FM-isicms-↖↖-↖-assoc : ∀ {i} {j}
     (s : S* i) (s′ : {j : I} → P* s j → S* j)

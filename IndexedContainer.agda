@@ -8,7 +8,9 @@ module IndexedContainer (I : Type) where
 
 open import Definitions I
 
+infix 19 _⊲_
 record IndexedContainer  : Type₁ where
+  constructor _⊲_
   field
     S : (i : I) → Type
     P : {i : I} → S i → (j : I) → Type
@@ -31,6 +33,7 @@ module _ (F : IndexedContainer) where
   _⟦$⟧_ : {X Y : I → Type} → (∀ i → X i → Y i) → (∀ i → ⟦ F ⟧ X i → ⟦ F ⟧ Y i)
   _⟦$⟧_ f i (s , v) = s , λ {j} p → f j (v p)
 
+infixr 18 _⇒_
 _⇒_ : (F G : IndexedContainer) → Type
 F ⇒ G = (i : I) (s : F .S i) → ⟦ G ⟧ (F .P s) i
 

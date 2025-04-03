@@ -3,7 +3,8 @@ open import Cubical.Foundations.Equiv using (_≃_)
 
 module IndexedContainer.Properties {I : Type} where
 
-open import IndexedContainer I as IC using (IndexedContainer; ⟦_⟧)
+open import Definitions I
+open import IndexedContainer I as IC using (IndexedContainer; _⊲_; ⟦_⟧; _⇒_; _;_)
 open import IndexedContainer.MonoidalCategory {I}
 
 -- interpretation is strong monoidal
@@ -38,3 +39,42 @@ module StrongMonoidal where
       ⊗-iso .leftInv  _ = refl
 
 open StrongMonoidal public
+
+-- ICs are fibered over their shapes
+module Fibration where
+  module _
+    {S : IType}
+    {P P′ : {i : I} → S i → (j : I) → Type}
+    (α : (S ⊲ P) ⇒ (S ⊲ P′)) where
+    isVertical : Type
+    isVertical = ∀ i → α i » fst ≡ idfun _
+
+  module _
+    {S S′ : IType}
+    (σ : S i→ S′)
+    (P′ : ∀ {i} → S′ i → IType)
+    where
+
+    _* : 
+      ∀ {i} → S i → IType
+    _* s = P′ (σ _ s)
+
+    lift* :
+      S ⊲ _* ⇒ S′ ⊲ P′ 
+    lift* i s = σ _ s , idfun _
+
+  module _ {S S′ : IType}
+    {P : ∀ {i} → S i → IType}
+    {P′ : ∀ {i} → S′ i → IType}
+    (α : S ⊲ P ⇒ S′ ⊲ P′)
+    where
+
+    σ : S i→ S′
+    σ = λ i s → α i s .fst
+
+    ↓_ : S ⊲ P ⇒ S ⊲ (σ *) P′
+    ↓_ i s = s , α i s .snd
+
+    factors : ↓_ ; lift* σ P′ ≡ α 
+    factors = refl
+      

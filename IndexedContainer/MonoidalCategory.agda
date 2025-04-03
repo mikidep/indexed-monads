@@ -54,11 +54,10 @@ module _ {F : IndexedContainer} where
   open IndexedContainer F
 
   unitor-l : (idᶜ ⊗ F) ⇒ F
-  unitor-l _ (s , _) = s , λ {j} p → j , p , refl
+  unitor-l _ (s , _) = s , λ p → _ , p , refl
 
   unitor-l-inv : F ⇒ (idᶜ ⊗ F)
-  unitor-l-inv _ s .fst = s , _
-  unitor-l-inv _ s .snd (k , p , k≡j) = subst (P s) k≡j p
+  unitor-l-inv i s = (s , _) , λ { (k , p , k≡j) → subst (P s) k≡j p }
 
   unitor-l-inv-l : Path ((idᶜ ⊗ F) ⇒ (idᶜ ⊗ F)) (unitor-l ; unitor-l-inv) (id₁ (idᶜ ⊗ F))
   unitor-l-inv-l =

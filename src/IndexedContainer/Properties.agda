@@ -1,5 +1,6 @@
 open import Prelude
 open import Cubical.Foundations.Equiv using (_≃_)
+open import Cubical.Data.Sigma using (_×_)
 
 module IndexedContainer.Properties {I : Type} where
 
@@ -42,6 +43,26 @@ open StrongMonoidal public
 
 -- ICs are fibered over their shapes
 module Fibration where
+  module _ {S S′ : IType}
+    {P : ∀ {i} → S i → IType}
+    {P′ : ∀ {i} → S′ i → IType}
+    (α : S ⊲ P ⇒ S′ ⊲ P′)
+    where
+
+    σ : S i→ S′
+    σ i s = α i s .fst
+    
+    π : ∀ {i} (s : S i) {j} → P′ (σ _ s) j → P s j
+    π s = α _ s .snd
+
+  module _
+    {S : IType}
+    {P : {i : I} → S i → (j : I) → Type}
+    where
+
+    ∫ : I → I → Type
+    ∫ i j = Σ[ s ∈ S i ] P s j
+
   module _
     {S : IType}
     {P P′ : {i : I} → S i → (j : I) → Type}
@@ -59,9 +80,10 @@ module Fibration where
       ∀ {i} → S i → IType
     _* s = P′ (σ _ s)
 
+    -- Do we have to factor through σ(S)??
     lift* :
-      S ⊲ _* ⇒ S′ ⊲ P′ 
-    lift* i s = σ _ s , idfun _
+      S ⊲ _* ⇒ S′ ⊲ P′
+    lift* i s = σ i s , idfun _
 
   module _ {S S′ : IType}
     {P : ∀ {i} → S i → IType}
@@ -69,12 +91,27 @@ module Fibration where
     (α : S ⊲ P ⇒ S′ ⊲ P′)
     where
 
-    σ : S i→ S′
-    σ = λ i s → α i s .fst
+    ↓_ : S ⊲ P ⇒ S ⊲ (σ α *) P′
+    ↓_ i s = s , π α s
 
-    ↓_ : S ⊲ P ⇒ S ⊲ (σ *) P′
-    ↓_ i s = s , α i s .snd
+    ΣP : I → IType
+    ΣP i j = Σ[ s ∈ S i ] P s j
 
-    factors : ↓_ ; lift* σ P′ ≡ α 
-    factors = refl
+    forget : ∀ i (s : S i) (s′ : S′ i) j → P′ s′ j → P s j
+    forget i s j p = {! !}
+
+    -- factors : ↓_ ; lift* (σ α) P′ ≡ α 
+    -- factors = {! !}
+
+  module _ {S S′ : IType}
+    {P : ∀ {i} → S i → IType}
+    {P′ : ∀ {i} → S′ i → IType}
+    (α β : S ⊲ P ⇒ S′ ⊲ P′)
+    where
+
+    factoring-≡ :
+      σ α ≡ σ β
+      → ↓ α ≡ {! !}
+      → α ≡ β
+    factoring-≡ = {! !}
       

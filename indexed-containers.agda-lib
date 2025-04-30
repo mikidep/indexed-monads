@@ -1,4 +1,4 @@
 name: indexed-containers
-include: .
-depend: cubical
+include: src
+depend: cubical groupoid-containers
 flags: --cubical --postfix-projections --hidden-argument-puns 

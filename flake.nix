@@ -7,6 +7,11 @@
       url = "github:agda/cubical/2f085f5";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    cubical-containers = {
+      url = "github:phijor/cubical-containers";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.cubical.follows = "agda-cubical";
+    };
     agda-index = {
       url = "github:phijor/agda-index";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -19,6 +24,7 @@
     nixpkgs,
     agda-cubical,
     agda-index,
+    cubical-containers,
     ...
   }: let
     # The systems supported for this flake
@@ -47,7 +53,7 @@
       default = pkgs.mkShell {
         # The Nix packages provided in the environment
         # Add any you need here
-        packages = [self.packages.${system}.agdaWithCubical self.packages.${system}.agda-search];
+        packages = [self.packages.${system}.agdaWithLibs self.packages.${system}.agda-search];
 
         # Set any environment variables for your dev shell
         env = {};
@@ -57,17 +63,25 @@
         '';
       };
     });
-    packages = forEachSupportedSystem ({pkgs, ...}: rec {
-      agdaWithCubical = pkgs.agda.withPackages (_: [pkgs.cubical]);
+    packages = forEachSupportedSystem ({
+      pkgs,
+      system,
+    }: rec {
+      agdaWithLibs = let
+        cubical-categorical-logic = pkgs.callPackage "${cubical-containers.outPath}/cubical-categorical-logic.nix" {
+          inherit (pkgs) cubical;
+        };
+      in
+        pkgs.agda.withPackages (_: [pkgs.cubical cubical-containers.packages.${system}.default cubical-categorical-logic]);
       docs = pkgs.stdenv.mkDerivation {
         name = "indexed-monads-docs";
         pname = "indexed-monads-docs";
-        buildInputs = [agdaWithCubical];
+        buildInputs = [agdaWithLibs];
         src = ./.;
         buildPhase = ''
           runHook preBuild
           mkdir $out
-          agda --html --html-dir=$out index.agda
+          agda --html --html-dir=$out src/index.agda
           runHook postBuild
         '';
       };

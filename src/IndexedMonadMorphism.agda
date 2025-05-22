@@ -70,8 +70,8 @@ module _
         {v : ∀ {j : I} → P s j → S j} 
         {j : I}
         → PathP (λ ι → P′ (f-• s v ι) j → I)
-          (λ p → _ raw′.↑ p)
-          (λ p → _ raw.↑ πf _ p)
+          (_ raw′.↑_)
+          (πf _ » _ raw.↑_)
 
       f-↖-PathP : 
         ∀ {i : I} 
@@ -79,8 +79,8 @@ module _
         {v : ∀ {j : I} → P s j → S j} 
         {j : I}
         → PathP (λ ι → (p : P′ (f-• s v ι) j) → P s (f-↑-PathP ι p))
-          (λ p → πf _ (_ raw′.↖ p))
-          (λ p → v raw.↖ πf _ p)
+          (_ raw′.↖_ » πf _)
+          (πf _ » _ raw.↖_)
 
       f-↗-PathP : 
         ∀ {i : I} 
@@ -88,8 +88,8 @@ module _
         {v : ∀ {j : I} → P s j → S j} 
         {j : I}
         → PathP (λ ι → (p : P′ (f-• s v ι) j) → P (v (f-↖-PathP ι p)) j)
-          (λ p → πf _ (_ raw′.↗ p))
-          (λ p → _ raw.↗ πf _ p)
+          (_ raw′.↗_ » πf _)
+          (πf _ » _ raw.↗_)
 
 module _ 
   {ICMS-T : IMModule.ICMS I T}

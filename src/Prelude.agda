@@ -90,3 +90,10 @@ module _ (A : Type) (P : A → Type) (x : A) where
   JIso .rightInv b = substRefl {B = P} b
   JIso .leftInv a ι y p = transp (λ i → P (p (i ∨ ι))) ι (a (p ι) λ i → p (i ∧ ι))
 
+module _ {ℓ} {A : Type ℓ} {B : A → Type ℓ} where
+  open import Cubical.Foundations.HLevels 
+  open import Cubical.Foundations.Equiv
+  open import Cubical.Functions.Implicit
+
+  isGroupoidImplicitΠ : ((x : A) → isGroupoid (B x)) → isGroupoid ({x : A} → B x)
+  isGroupoidImplicitΠ H = isOfHLevelRespectEquiv 3 (invEquiv implicit≃Explicit) (isGroupoidΠ H)

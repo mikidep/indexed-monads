@@ -18,6 +18,8 @@ module _ where
     _⊗_ .P (s , v) k = Σ[ j ∈ I ] Σ[ p ∈ G .P s j ] F .P (v p) k
 
   module _ {F G H K : IndexedContainer} where
+    infixl 21 _⊗₁_
+
     _⊗₁_ : (α : F ⇒ H) (β : G ⇒ K) → (F ⊗ G) ⇒ (H ⊗ K)
     _⊗₁_ α β _ (Gs , Gsp→Fs) .fst = 
       let 

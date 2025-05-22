@@ -3,22 +3,22 @@ open import Cubical.Foundations.Structure
 import Cubical.Foundations.GroupoidLaws as GL
 open import Cubical.WildCat.Base
 open import Cubical.WildCat.Functor 
+open import Cubical.Data.Sigma using (_×_)
 
 open import Prelude
 open import GpdCont.TwoCategory.Base
 open import GpdCont.TwoCategory.TwoDiscrete
+open import GpdCont.TwoCategory.StrictFunctor
 open import GpdCont.WildCat.NatTrans 
+
 
 module IndexedGpdContainer
   (I : Type)
-  (S : I → Type)
-  (P : ∀ {i} → S i → I → Type)
   (isGpdI : isGroupoid I)
-  (isGpdS : ∀ {i} → isGroupoid (S i))
-  (isGpdP : ∀ {i} {s : S i} {j} → isGroupoid (P s j))
   where
 
 open import Definitions I
+open import IndexedContainer I
 
 open TwoCategory
 open TwoCategoryStr
@@ -134,3 +134,57 @@ isGroupoidEndoNatTrans F G = isGroupoidRetract {B = NatTrans′} toNatTrans′ f
 
 GpdIEndo : TwoCategory _ _ _
 GpdIEndo = TwoDiscrete WildGpdIEndo isGroupoidEndoNatTrans
+
+isGroupoidIC : IndexedContainer → Type
+isGroupoidIC (S ⊲ P) =
+  (∀ {i} → isGroupoid (S i))
+  × (∀ {i} {s : S i} {j} → isGroupoid (P s j))
+
+GpdIC = Σ[ ic ∈ IndexedContainer ] isGroupoidIC ic
+
+WildGpdICont : WildCat _ _ 
+WildGpdICont .ob = GpdIC
+WildGpdICont .Hom[_,_] F G = F .fst ⇒ G .fst
+WildGpdICont .id = id₁ _
+WildGpdICont ._⋆_ = _;_
+WildGpdICont .⋆IdL _ = refl
+WildGpdICont .⋆IdR _ = refl
+WildGpdICont .⋆Assoc _ _ _ = refl
+
+GpdICont : TwoCategory _ _ _
+GpdICont = TwoDiscrete WildGpdICont isGroupoid⇒
+  where
+  isGroupoid⇒ : (F G : GpdIC) → isGroupoid (F .fst ⇒ G .fst)
+  isGroupoid⇒ (S ⊲ P , _ , isGpdP) (S′ ⊲ P′ , isGpdS′ , _) =
+    isGroupoidΠ2 λ i s →
+      isGroupoidΣ isGpdS′ λ s′ → isGroupoidImplicitΠ λ _ →
+        isGroupoidΠ λ _ → isGpdP
+
+module ⟦-⟧ where
+  open StrictFunctor
+  open import Cubical.Functions.FunExtEquiv
+
+  Eval : GpdICont .ob → GpdIEndo .ob
+  Eval (ic , isgpdic) .WildFunctor.F-ob (x , isgpdx) = ⟦ ic ⟧ x , λ i → isGroupoidΣ (isgpdic .fst) λ s → isGroupoidImplicitΠ λ j → isGroupoidΠ λ _ → isgpdx j
+  Eval (ic , isgpdic) .WildFunctor.F-hom = _⟦$⟧_ _
+  Eval (ic , isgpdic) .WildFunctor.F-id = funExt₂ λ i x → refl  
+  Eval (ic , isgpdic) .WildFunctor.F-seq f g = funExt₂ λ i x → refl 
+
+  EvalHom : ∀ {x} {y} → GpdICont .hom x y → GpdIEndo .hom (Eval x) (Eval y)
+  EvalHom = {! !}
+
+  ⟦-⟧ : StrictFunctor GpdICont GpdIEndo
+  ⟦-⟧ .F-ob = Eval
+  ⟦-⟧ .F-hom = EvalHom
+  ⟦-⟧ .F-rel = {! !}
+  ⟦-⟧ .F-rel-id = {! !}
+  ⟦-⟧ .F-rel-trans = {! !}
+  ⟦-⟧ .F-hom-comp = {! !}
+  ⟦-⟧ .F-hom-id = {! !}
+  ⟦-⟧ .F-assoc-filler-left = {! !}
+  ⟦-⟧ .F-assoc-filler-right = {! !}
+  ⟦-⟧ .F-assoc = {! !}
+  ⟦-⟧ .F-unit-left-filler = {! !}
+  ⟦-⟧ .F-unit-left = {! !}
+  ⟦-⟧ .F-unit-right-filler = {! !}
+  ⟦-⟧ .F-unit-right = {! !}

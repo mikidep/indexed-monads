@@ -85,33 +85,33 @@ module Fibration where
       S ⊲ _* ⇒ S′ ⊲ P′
     lift* i s = σ i s , idfun _
 
-  module _ {S S′ : IType}
-    {P : ∀ {i} → S i → IType}
-    {P′ : ∀ {i} → S′ i → IType}
-    (α : S ⊲ P ⇒ S′ ⊲ P′)
-    where
-
-    ↓_ : S ⊲ P ⇒ S ⊲ (σ α *) P′
-    ↓_ i s = s , π α s
-
-    ΣP : I → IType
-    ΣP i j = Σ[ s ∈ S i ] P s j
-
-    forget : ∀ i (s : S i) (s′ : S′ i) j → P′ s′ j → P s j
-    forget i s j p = {! !}
-
-    -- factors : ↓_ ; lift* (σ α) P′ ≡ α 
-    -- factors = {! !}
-
-  module _ {S S′ : IType}
-    {P : ∀ {i} → S i → IType}
-    {P′ : ∀ {i} → S′ i → IType}
-    (α β : S ⊲ P ⇒ S′ ⊲ P′)
-    where
-
-    factoring-≡ :
-      σ α ≡ σ β
-      → ↓ α ≡ {! !}
-      → α ≡ β
-    factoring-≡ = {! !}
-      
+  -- module _ {S S′ : IType}
+  --   {P : ∀ {i} → S i → IType}
+  --   {P′ : ∀ {i} → S′ i → IType}
+  --   (α : S ⊲ P ⇒ S′ ⊲ P′)
+  --   where
+  --
+  --   ↓_ : S ⊲ P ⇒ S ⊲ (σ α *) P′
+  --   ↓_ i s = s , π α s
+  --
+  --   ΣP : I → IType
+  --   ΣP i j = Σ[ s ∈ S i ] P s j
+  --
+  --   forget : ∀ i (s : S i) (s′ : S′ i) j → P′ s′ j → P s j
+  --   forget i s j p = {! !}
+  --
+  --   -- factors : ↓_ ; lift* (σ α) P′ ≡ α 
+  --   -- factors = {! !}
+  --
+  -- module _ {S S′ : IType}
+  --   {P : ∀ {i} → S i → IType}
+  --   {P′ : ∀ {i} → S′ i → IType}
+  --   (α β : S ⊲ P ⇒ S′ ⊲ P′)
+  --   where
+  --
+  --   factoring-≡ :
+  --     σ α ≡ σ β
+  --     → ↓ α ≡ {! !}
+  --     → α ≡ β
+  --   factoring-≡ = {! !}
+  --

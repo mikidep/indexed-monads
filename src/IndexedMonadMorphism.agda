@@ -6,6 +6,8 @@ open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.Equiv.Properties
 open import Cubical.Foundations.Path
 
+open import Cubical.Reflection.StrictEquiv
+
 import IndexedContainer as ICModule
 import IndexedMonad as IMModule
 
@@ -126,4 +128,38 @@ module _
       )
     }
 
+module _ 
+  {ICMon-T : IMModule.ICMonoid I T}
+  {ICMon-T′ : IMModule.ICMonoid I T′}
+  (isicmonmor : isICMonoidMorphism ICMon-T ICMon-T′)
+  where
 
+  private
+    module raw = IMModule.RawICMonoid (ICMon-T .fst)
+    module raw′ = IMModule.RawICMonoid (ICMon-T′ .fst)
+
+  open IMModule I
+  open isICMonoidMorphism isicmonmor
+  open isICMM 
+
+  isICMonoidMorphism→isICMM : isICMM (ICMonoid→ICMS _ ICMon-T) (ICMonoid→ICMS _ ICMon-T′)
+  isICMonoidMorphism→isICMM .f-e ι = σ (hom-η ι) _ _ 
+  isICMonoidMorphism→isICMM .f-P-e-idx ι p = π (hom-η ι) _ p
+  isICMonoidMorphism→isICMM .f-• s v ι = σ (hom-μ ι) _ (s , v)
+  isICMonoidMorphism→isICMM .f-↑-PathP ι p′ = π (hom-μ ι) _ p′ .fst
+  isICMonoidMorphism→isICMM .f-↖-PathP ι p′ = π (hom-μ ι) _ p′ .snd .fst
+  isICMonoidMorphism→isICMM .f-↗-PathP ι p′ = π (hom-μ ι) _ p′ .snd .snd
+
+module _ 
+  {ICMon-T : IMModule.ICMonoid I T}
+  {ICMon-T′ : IMModule.ICMonoid I T′}
+  where
+
+  open IMModule I
+
+  isICMonoidMorphism≃isICMM : isICMonoidMorphism ICMon-T ICMon-T′ ≃ isICMM (ICMonoid→ICMS _ ICMon-T) (ICMonoid→ICMS _ ICMon-T′)
+  unquoteDef isICMonoidMorphism≃isICMM = 
+    defStrictEquiv 
+      isICMonoidMorphism≃isICMM 
+      isICMonoidMorphism→isICMM   
+      isICMM→isICMonoidMorphism

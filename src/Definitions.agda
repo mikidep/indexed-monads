@@ -18,16 +18,15 @@ infixl 10 _i»_
 _i»_ : {A B C : IType} → A i→ B → B i→ C → A i→ C
 _i»_ f g i = f i » g i
 
-ISet : Type₁
-ISet = I → hSet ℓ-zero
+isISet : IType → Type
+isISet X = ∀ i → isSet (X i)
 
-itype : ISet → IType
-itype X i = X i .fst
+ISet = Σ IType isISet
 
 _IS→_ : ISet → ISet → ISet
-(X IS→ Y) i .fst = X i .fst → Y i .fst
-(X IS→ Y) i .snd = isSet→ (Y i .snd)
+(X IS→ Y) .fst = X .fst I→ Y .fst
+(X IS→ Y) .snd i = isSet→ (Y .snd i)
 
 _is→_ : ISet → ISet → Type
-X is→ Y = ∀ (i : I) → (X IS→ Y) i .fst
+X is→ Y = X .fst i→ Y .fst
 

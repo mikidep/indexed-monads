@@ -1,3 +1,5 @@
+module EverythingIC where
+
 import Prelude
 import IndexedContainer
 import IndexedContainer.Properties

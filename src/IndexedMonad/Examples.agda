@@ -19,7 +19,6 @@ module ProductMonad {I : Type}
   open IM
 
   open IndexedContainer
-  open ICMS
 
   open import Cubical.Data.Sigma using (_×_)
   open import Cubical.Data.Sum as Sum using (_⊎_; inl; inr)
@@ -28,8 +27,8 @@ module ProductMonad {I : Type}
   T×T′ .S i = T .S i × T′ .S i
   T×T′ .P (s , s′) j = T .P s j ⊎ T′ .P s′ j
 
-  open RawICMS (icms-T .icms)
-  open RawICMS (icms-T′ .icms) using () renaming
+  open RawICMS (icms-T .fst)
+  open RawICMS (icms-T′ .fst) using () renaming
     ( e to e′
     ; _•_ to _•′_ 
     ; _↑_ to _↑′_
@@ -61,8 +60,8 @@ module ProductMonad {I : Type}
 
   open import Cubical.Data.Sigma using (ΣPathP)
   open isICMS
-  is = icms-T .is-icms
-  is′ = icms-T′ .is-icms
+  is = icms-T .snd
+  is′ = icms-T′ .snd
 
   is-icms-T×T′ : isICMS _ _ raw-icms-T×T′
   is-icms-T×T′ .isICMS.e-unit-l (s , s′) = ΣPathP (is .e-unit-l s , is′ .e-unit-l s′)
@@ -86,5 +85,4 @@ module ProductMonad {I : Type}
   is-icms-T×T′ .isICMS.↖↗-↗↖-assoc ss ss′ ss″ ι (inr p) = inr (is′ .↖↗-↗↖-assoc _ _ _ ι p)  
   is-icms-T×T′ .isICMS.↗-↗↗-assoc ss ss′ ss″ ι (inl p) = inl (is  .↗-↗↗-assoc _ _ _ ι p) 
   is-icms-T×T′ .isICMS.↗-↗↗-assoc ss ss′ ss″ ι (inr p) = inr (is′ .↗-↗↗-assoc _ _ _ ι p)  
-
 

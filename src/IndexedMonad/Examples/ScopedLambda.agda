@@ -100,9 +100,9 @@ module _ where
   lam-ricms : RawICMS
   lam-ricms .e n = var
   lam-ricms ._•_ {i} = lam-ricms-• {i}
-  lam-ricms ._↑_ {s} = lam-ricms-↑ s 
-  lam-ricms ._↖_ {s} = lam-ricms-↖ s
-  lam-ricms ._↗_ {s} = lam-ricms-↗ s
+  lam-ricms .↑ {s} = lam-ricms-↑ s _
+  lam-ricms .↖ {s} = lam-ricms-↖ s _
+  lam-ricms .↗ {s} = lam-ricms-↗ s _
   lam-ricms .P-e-idx = idfun _
 
 open isICMS
@@ -117,7 +117,7 @@ private
   lam-isicms-e-unit-l (lam M) = cong lam (lam-isicms-e-unit-l M)
 
   lam-isicms-↖-unit-l : ∀ {i} (s : LamS i) {j : ℕ} →
-      PathP (λ z → LamP (lam-isicms-e-unit-l s z) j → LamP s j)
+      PathP (λ ι → LamP (lam-isicms-e-unit-l s ι) j → LamP s j)
       (λ p → transp (λ i₁ → LamP s (lam-ricms-↗ s (λ {j = j₁} _ → var) p i₁)) i0 (lam-ricms-↖ s (λ _ → var) p))
       (λ p → p)
   lam-isicms-↖-unit-l {i} var {j} ι p = transp (λ κ → i ≡ p (ι ∨ κ)) ι (λ κ → p (ι ∧ κ))

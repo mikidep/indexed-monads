@@ -31,9 +31,9 @@ module ProductMonad {I : Type}
   open RawICMS (icms-T′ .fst) using () renaming
     ( e to e′
     ; _•_ to _•′_ 
-    ; _↑_ to _↑′_
-    ; _↖_ to _↖′_
-    ; _↗_ to _↗′_
+    ; ↑ to ↑′
+    ; ↖ to ↖′
+    ; ↗ to ↗′
     ; P-e-idx to P-e-idx′
     )
 
@@ -47,15 +47,9 @@ module ProductMonad {I : Type}
   raw-icms-T×T′ : RawICMS I T×T′
   raw-icms-T×T′ .RawICMS.e i = e i , e′ i
   raw-icms-T×T′ .RawICMS._•_ (s , s′) vv′ = s • l vv′ , s′ •′ r vv′
-  raw-icms-T×T′ .RawICMS._↑_ vv′ = Sum.rec (l vv′ ↑_) (r vv′ ↑′_)
-  raw-icms-T×T′ .RawICMS._↖_ vv′ =
-    Sum.elim
-      (λ p → inl (l vv′ ↖ p))
-      (λ p → inr (r vv′ ↖′ p))
-  raw-icms-T×T′ .RawICMS._↗_ vv′ =
-    Sum.elim
-      (λ p → inl (l vv′ ↗ p))
-      (λ p → inr (r vv′ ↗′ p))
+  raw-icms-T×T′ .RawICMS.↑ = Sum.rec ↑ ↑′
+  raw-icms-T×T′ .RawICMS.↖ = Sum.elim (↖ » inl) (↖′ » inr)
+  raw-icms-T×T′ .RawICMS.↗ = Sum.elim (↗ » inl) (↗′ » inr)
   raw-icms-T×T′ .RawICMS.P-e-idx = Sum.elim P-e-idx P-e-idx′
 
   open import Cubical.Data.Sigma using (ΣPathP)

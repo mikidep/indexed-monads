@@ -16,9 +16,9 @@ open RawICMS
 stateic-raw-icms : RawICMS
 stateic-raw-icms .e i ei = i , ei
 stateic-raw-icms ._•_ ms ms′ ei = ms′ (ei , refl) (ms ei .snd)
-stateic-raw-icms ._↑_ {s = ms} _ (ei , _) = ms ei .fst
-stateic-raw-icms ._↖_ _ (ei , _) = ei , refl
-stateic-raw-icms ._↗_ {s = ms} _ (ei , eq) = ms ei .snd , eq
+stateic-raw-icms .↑ {s = ms} (ei , _) = ms ei .fst
+stateic-raw-icms .↖ (ei , _) = ei , refl
+stateic-raw-icms .↗ {s = ms} (ei , eq) = ms ei .snd , eq
 stateic-raw-icms .P-e-idx = snd
 
 open isICMS

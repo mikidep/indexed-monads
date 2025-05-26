@@ -50,14 +50,6 @@ module _ {F G : IndexedContainer} {α β : F ⇒ G} where
     → Path (F ⇒ G) α β
   ⇒PathP hom = funExt₂ hom
 
-module _ {F G : IndexedContainer} {α β : F ⇒ G} (α≡β : α ≡ β) where
-  σs≡ : {i : I} (s : F .S i) → α i s .fst ≡ β i s .fst
-  σs≡ s ι = α≡β ι _ s .fst
-
-  πs≡ : {i : I} (s : F .S i) {j : I}
-    → PathP {ℓ-zero} (λ ι → G .P (σs≡ s ι) j → F .P s j) (α i s .snd) (β i s .snd)
-  πs≡ s ι = α≡β ι _ s .snd
-
 module _ (F : IndexedContainer) where
   id₁ : F ⇒ F 
   id₁ _ s = (s , idfun _)

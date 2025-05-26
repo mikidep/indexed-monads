@@ -39,21 +39,22 @@ module _ (_▹_ : W → I → I) (isAct : IsWIAction _▹_) where
     wic-ricms : RawICMS
     wic-ricms .e _ = ε
     wic-ricms ._•_ w w′ = w · w′ refl
-    wic-ricms ._↑_ {i} {s = w} _ _ = w ▹ i
-    wic-ricms ._↖_ _ _ = refl
-    wic-ricms ._↗_ {i} {s = w} w′ w·w′▹i≡j = sym (pres· w (w′ refl) ≡$ i) ∙ w·w′▹i≡j
+    wic-ricms .↑ {i} {s = w} _ = w ▹ i
+    wic-ricms .↖ _ = refl
+    wic-ricms .↗ {i} {s = w} {s′ = w′} w·w′▹i≡j = sym (pres· w (w′ refl) ≡$ i) ∙ w·w′▹i≡j
     wic-ricms .P-e-idx {i} ε▹i≡j = sym (presε ≡$ i) ∙ ε▹i≡j
 
   open RawICMS wic-ricms
-  open isICMS′
+  open isICMS
   open import Cubical.Foundations.Transport using (isSet-subst)
-  wic-isicms : isICMS′ wic-ricms
+  open import Cubical.Functions.FunExtEquiv
+  wic-isicms : isICMS wic-ricms
   wic-isicms .e-unit-l = ·IdR
-  wic-isicms .↖-unit-l w p = toPathP (issI _ _ _ _)
+  wic-isicms .↖-unit-l w = funExtDep λ _ → issI _ _ _ _ 
   wic-isicms .e-unit-r {i} w = ·IdL _ ∙ substRefl {x = i} w
-  wic-isicms .↗-unit-r w i≡j = toPathP (issI _ _ _ _)
+  wic-isicms .↗-unit-r w  = funExtDep λ _ → issI _ _ _ _
   wic-isicms .•-assoc {i} w w′ w″ = 
-    sym (·Assoc w (w′ refl) (w″ refl (w′ ↗ refl)))
+    sym (·Assoc w (w′ refl) (w″ refl (↗ {s′ = w′} refl)))
     ∙ cong (w ·_) (cong (w′ refl ·_) (cong₂ (λ j x → w″ {j = j} refl x) (pres· w (w′ refl) ≡$ i) (toPathP (issI _ _ _ _))))
   wic-isicms .↑-↗↑-assoc {i} w w′ w″ = toPathP (funExt λ p → transportRefl ((w · w′ refl) ▹ i) ∙ (pres· w (w′ refl) ≡$ i))
   wic-isicms .↖↑-↑-assoc {i} w w′ w″ = toPathP (funExt λ p → transportRefl (w ▹ i))

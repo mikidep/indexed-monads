@@ -52,7 +52,7 @@ module Fibration where
     σ : S i→ S′
     σ i s = α i s .fst
     
-    π : ∀ {i} (s : S i) {j} → P′ (σ _ s) j → P s j
+    π : ∀ {i} (s : S i) {j} → P′ (σ i s) j → P s j
     π s = α _ s .snd
 
   module _

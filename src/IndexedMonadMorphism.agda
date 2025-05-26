@@ -64,34 +64,34 @@ module _
           raw′.P-e-idx
 
       f-• : ∀ {i : I} (s : S i) (v : ∀ {j : I} → P s j → S j) 
-        → σf i s raw′.• (λ {j} → πf s » v » σf j) ≡ σf i (s raw.• v)
+        → σf i s raw′.• (πf s » v » σf _) ≡ σf i (s raw.• v)
       
-      f-↑-PathP : 
+      f-↑ : 
         ∀ {i : I} 
         {s : S i} 
         {v : ∀ {j : I} → P s j → S j} 
         {j : I}
         → PathP (λ ι → P′ (f-• s v ι) j → I)
-          (_ raw′.↑_)
-          (πf _ » _ raw.↑_)
+          (raw′.↑)
+          (πf _ » raw.↑)
 
-      f-↖-PathP : 
+      f-↖ : 
         ∀ {i : I} 
         {s : S i} 
         {v : ∀ {j : I} → P s j → S j} 
         {j : I}
-        → PathP (λ ι → (p : P′ (f-• s v ι) j) → P s (f-↑-PathP ι p))
-          (_ raw′.↖_ » πf _)
-          (πf _ » _ raw.↖_)
+        → PathP (λ ι → (p : P′ (f-• s v ι) j) → P s (f-↑ ι p))
+          (raw′.↖ » πf _)
+          (πf _ » raw.↖)
 
-      f-↗-PathP : 
+      f-↗ : 
         ∀ {i : I} 
         {s : S i} 
         {v : ∀ {j : I} → P s j → S j} 
         {j : I}
-        → PathP (λ ι → (p : P′ (f-• s v ι) j) → P (v (f-↖-PathP ι p)) j)
-          (_ raw′.↗_ » πf _)
-          (πf _ » _ raw.↗_)
+        → PathP (λ ι → (p : P′ (f-• s v ι) j) → P (v (f-↖ ι p)) j)
+          (raw′.↗ » πf _)
+          (πf _ » raw.↗)
 
 module _ 
   {ICMS-T : IMModule.ICMS I T}
@@ -116,11 +116,11 @@ module _
       ( f-• s v  
       , implicitFunExt λ {_} → congPathEquiv (λ ι → invEquiv Σ-Π-≃) .fst
         (ΣPathP
-          ( f-↑-PathP 
+          ( f-↑ 
           , congPathEquiv (λ ι → invEquiv Σ-Π-≃) .fst
             (ΣPathP 
-              ( f-↖-PathP 
-              , f-↗-PathP
+              ( f-↖ 
+              , f-↗
               )
             )
           )
@@ -146,9 +146,9 @@ module _
   isICMonoidMorphism→isICMM .f-e ι = σ (hom-η ι) _ _ 
   isICMonoidMorphism→isICMM .f-P-e-idx ι p = π (hom-η ι) _ p
   isICMonoidMorphism→isICMM .f-• s v ι = σ (hom-μ ι) _ (s , v)
-  isICMonoidMorphism→isICMM .f-↑-PathP ι p′ = π (hom-μ ι) _ p′ .fst
-  isICMonoidMorphism→isICMM .f-↖-PathP ι p′ = π (hom-μ ι) _ p′ .snd .fst
-  isICMonoidMorphism→isICMM .f-↗-PathP ι p′ = π (hom-μ ι) _ p′ .snd .snd
+  isICMonoidMorphism→isICMM .f-↑ ι p′ = π (hom-μ ι) _ p′ .fst
+  isICMonoidMorphism→isICMM .f-↖ ι p′ = π (hom-μ ι) _ p′ .snd .fst
+  isICMonoidMorphism→isICMM .f-↗ ι p′ = π (hom-μ ι) _ p′ .snd .snd
 
 module _ 
   {ICMon-T : IMModule.ICMonoid I T}

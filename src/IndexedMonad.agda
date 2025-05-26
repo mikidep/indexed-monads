@@ -36,6 +36,7 @@ record RawICMS : Type where
   infixl 24 _•_
   field
     e  : ∀ i → S i
+    P-e-idx : ∀ {i} {j} → P (e i) j → i ≡ j
     _•_ : ∀ {i} (s : S i)
       → (s′ : ∀ {j} (p : P s j) → S j)
       → S i
@@ -51,7 +52,6 @@ record RawICMS : Type where
       → {s′ : ∀ {j} (p : P s j) → S j}
       → {j : I} (p : P (s • s′) j)
       → P (s′ (↖ p)) j
-    P-e-idx : ∀ {i} {j} → P (e i) j → i ≡ j
 
   infixl 24 _Π•_
 
@@ -90,11 +90,8 @@ record isICMS (raw : RawICMS) : Type where
 
     ↖-unit-l : ∀ {i} (s : S i) {j}
       → PathP (λ ι → P (e-unit-l s ι) j → P s j)
-        (λ (p : P (s • const-e) j) →
-           (subst (P s) (P-e-idx (↗ p)))
-           (↖ p)
-        )
-        (λ p → p)
+        (λ p → subst (P s) (P-e-idx (↗ p)) (↖ p))
+        (idfun _)
 
     e-unit-r : ∀ {i} (s : S i)
       → e i • (λ p → subst S (P-e-idx p) s) ≡ s

@@ -4,7 +4,7 @@ open import Cubical.Data.Unit
 open import Cubical.Data.Nat
 open import Cubical.Data.Fin as Fin using (Fin)
 
-module IndexedMonad.Examples where
+module IndexedMonad.Examples.Product where
 
 import IndexedContainer as IC
 import IndexedMonad as IM

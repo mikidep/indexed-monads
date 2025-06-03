@@ -36,7 +36,6 @@ record RawICMS : Type where
   infixl 24 _•_
   field
     e  : ∀ i → S i
-    P-e-idx : ∀ {i} {j} → P (e i) j → i ≡ j
     _•_ : ∀ {i} (s : S i)
       → (s′ : ∀ {j} (p : P s j) → S j)
       → S i

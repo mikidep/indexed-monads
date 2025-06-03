@@ -14,7 +14,7 @@ open import Cubical.Foundations.Prelude public
 syntax ≡[-]-syntax p B xb yb = xb ≡[ p , B ] yb
 infix 4 ≡[-]-syntax
 
-open import Cubical.Foundations.Function using (_$_; idfun) public
+open import Cubical.Foundations.Function using (_$_; idfun; const) public
 
 module _
   {ℓ ℓ' ℓ'' : Level}

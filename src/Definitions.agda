@@ -14,6 +14,9 @@ infixr 5 _i→_
 _i→_ : IType → IType → Type
 X i→ Y = ∀ (i : I) → (X I→ Y) i
 
+i-idfun : ∀ {A : IType} → A i→ A
+i-idfun = λ _ → idfun _
+
 infixl 10 _i»_ 
 _i»_ : {A B C : IType} → A i→ B → B i→ C → A i→ C
 _i»_ f g i = f i » g i

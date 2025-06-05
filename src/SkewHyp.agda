@@ -15,46 +15,70 @@ module _ {A A′ B B′ : Type} where
   _⊗₁_ : (A → A′) → (B → B′) → A ⊗ B → A′ ⊗ B′ 
   (f ⊗₁ g) (a , pb) = f a , pb » g
 
-I : Type
-I = Unit
+I⊗ : Type
+I⊗ = Unit
 
 module _ (X : Type) where
-  lunit : X → I ⊗ X
-  lunit x = _ , const x
+  lunit-⊗ : X → I⊗ ⊗ X
+  lunit-⊗ x = _ , const x
 
-  runit : X ⊗ I → X
-  runit (x , _) = x
+  runit-⊗ : X ⊗ I⊗ → X
+  runit-⊗ (x , _) = x
 
 module _ (X Y Z : Type) where
-  assoc : X ⊗ (Y ⊗ Z) → (X ⊗ Y) ⊗ Z
-  assoc (x , yz) = (x , yz » fst) , λ p → yz p .snd p
+  assoc-⊗ : X ⊗ (Y ⊗ Z) → (X ⊗ Y) ⊗ Z
+  assoc-⊗ (x , yz) = (x , yz » fst) , λ p → yz p .snd p
 
 module _ (M : Type) where
-  record MonoidStr : Type where
+  record isMonoid-⊗ (η : I⊗ → M) (μ : M ⊗ M → M) : Type where
     field
-      u : I → M
-      m : M ⊗ M → M
+      η-unit-l : lunit-⊗ M » η ⊗₁ idfun M » μ ≡ idfun M
+      η-unit-r : idfun M ⊗₁ η » μ ≡ runit-⊗ M
+      μ-assoc  : assoc-⊗ M M M » μ ⊗₁ idfun M » μ ≡ idfun M ⊗₁ μ » μ 
 
-  record isMonoidStr (mstr : MonoidStr) : Type where
-    open MonoidStr mstr
+  record MonoidStr-⊗ : Type where
     field
-      u-unit-l : lunit M » u ⊗₁ idfun M » m ≡ idfun M
-      u-unit-r : idfun M ⊗₁ u » m ≡ runit M
-      m-assoc  : assoc M M M » m ⊗₁ idfun M » m ≡ idfun M ⊗₁ m » m 
+      η : I⊗ → M
+      μ : M ⊗ M → M
+      is-monoid : isMonoid-⊗ η μ
+    open isMonoid-⊗ is-monoid public
+
+  record isComonoid (ε : M → I⊗) (δ : M → M ⊗ M) : Type where
+    field
+      ε-counit-l : δ » ε ⊗₁ idfun M ≡ lunit-⊗ M
+      ε-counit-r : δ » idfun M ⊗₁ ε » runit-⊗ M ≡ idfun M
+      δ-assoc : δ » idfun M ⊗₁ δ » assoc-⊗ M M M ≡ δ » δ ⊗₁ idfun M
+          
+  record ComonoidStr : Type where
+    field
+      ε : M → I⊗
+      δ : M → M ⊗ M
+      is-comonoid : isComonoid ε δ
+    open isComonoid is-comonoid public
+
+Monoid : Type _
+Monoid = Σ[ M ∈ Type ] MonoidStr-⊗ M 
+
+module _ (Mon : Monoid) (X : Type) where
+  open Σ Mon using () renaming (fst to M)
+  open MonoidStr-⊗ (Mon .snd)
+
+  record isLeftAction (f : M ⊗ X → X) : Type where
+    field
+      act-η : lunit-⊗ X » η ⊗₁ idfun X » f ≡ idfun X
+      act-μ : assoc-⊗ M M X » μ ⊗₁ idfun X » f ≡ idfun M ⊗₁ f » f
 
 module _ (S : Type) (e : S) (_•_ : S → (P → S) → S) where
-  open MonoidStr
-  mstr : MonoidStr S
-  mstr .u = const e
-  mstr .m (s , v) = s • v
-
-  open isMonoidStr
-  ismstr : isMonoidStr S mstr
-  ismstr .u-unit-l = funExt
+  open MonoidStr-⊗
+  open isMonoid-⊗
+  mstr : MonoidStr-⊗ S
+  mstr .η = const e
+  mstr .μ (s , v) = s • v
+  mstr .is-monoid .η-unit-l = funExt
     λ s → {! !} -- Goal: (e • (λ x → s)) ≡ s
-  ismstr .u-unit-r = funExt
+  mstr .is-monoid .η-unit-r = funExt
     λ { (s , _) → {! !} } -- Goal: (s • (λ x → e)) ≡ s
-  ismstr .m-assoc = funExt λ sv →
+  mstr .is-monoid .μ-assoc = funExt λ sv →
     let
       s = sv .fst 
       s′ = sv .snd » fst
@@ -65,3 +89,29 @@ module _ (S : Type) (e : S) (_•_ : S → (P → S) → S) where
       smoosh-s″ p = s″ p p
     in {! !} -- Goal: ((s • s′) • smoosh-s″) ≡ (s • s′Π•s″)
     -- Why is smoosh different here?
+    -- Probably because I put the associator on the other side
+    -- in the equation.
+    --
+    -- Note that Reader P is dual in some sense to Cowriter P
+    -- Could it be that on positions we want S to be a comonoid for
+    -- the dual skew monoidal structure induced by Cowriter P?
+    -- Capiamo.
+
+-- left skew-monoidal
+_⊙_ : Type → Type → Type
+A ⊙ B = A × B × P
+
+I⊙ = P
+
+module _ {A A′ B B′ : Type} where
+  infixl 21 _⊙₁_
+
+  _⊙₁_ : (A → A′) → (B → B′) → A ⊙ B → A′ ⊙ B′ 
+  (f ⊙₁ g) (a , b , p) = f a , g b , p
+
+module _ (X : Type) where
+  lunit-⊙ : I⊙ ⊙ X → X
+  lunit-⊙ (_ , x , _) = x
+
+  runit-⊙ : X → X ⊙ I⊙
+  runit-⊙ x = {! !}

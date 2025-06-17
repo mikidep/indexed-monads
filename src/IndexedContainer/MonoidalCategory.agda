@@ -1,5 +1,7 @@
 open import Prelude
 open import Cubical.Data.Unit
+open import Cubical.Foundations.Equiv using (_≃_)
+
 
 module IndexedContainer.MonoidalCategory {I : Type} where
 
@@ -12,7 +14,22 @@ module _ where
   idᶜ .S _ = Unit
   idᶜ .P {i} _ j = i ≡ j
 
+  -- It is useful to have this here
+  module _ (X : I → Type) where
+    open import Cubical.Foundations.Equiv
+    open import Cubical.Foundations.Isomorphism
+    open import Cubical.Data.Sigma.Properties
+    open import Cubical.Functions.Implicit
+
+    idᶜ-≃ : ∀ i → ⟦ idᶜ ⟧ X i ≃ X i
+    idᶜ-≃ i = 
+      isoToEquiv lUnit×Iso 
+      ∙ₑ implicit≃Explicit 
+      ∙ₑ JEquiv _ _ _
+
   module _ (F G : IndexedContainer) where
+    infixl 20 _⊗_
+
     _⊗_ : IndexedContainer
     _⊗_ .S = ⟦ G ⟧ (F .S) 
     _⊗_ .P (s , v) k = Σ[ j ∈ I ] Σ[ p ∈ G .P s j ] F .P (v p) k
@@ -55,14 +72,23 @@ module _ {F : IndexedContainer} where
 
   open IndexedContainer F
 
-  unitor-l : (idᶜ ⊗ F) ⇒ F
-  unitor-l _ (s , _) = s , λ p → _ , p , refl
+  unitor-l : F ⇒ idᶜ ⊗ F
+  unitor-l i s = (s , _) , λ { (k , p , k≡j) → subst (P s) k≡j p }
 
-  unitor-l-inv : F ⇒ (idᶜ ⊗ F)
-  unitor-l-inv i s = (s , _) , λ { (k , p , k≡j) → subst (P s) k≡j p }
+  unitor-l-inv : idᶜ ⊗ F ⇒ F
+  unitor-l-inv _ (s , _) = s , λ p → _ , p , refl
 
-  unitor-l-inv-l : Path ((idᶜ ⊗ F) ⇒ (idᶜ ⊗ F)) (unitor-l ; unitor-l-inv) (id₁ (idᶜ ⊗ F))
-  unitor-l-inv-l =
+  unitor-l-inv-l : Path 
+    (F ⇒ F) 
+    (unitor-l ; unitor-l-inv)
+    (id₁ F)
+  unitor-l-inv-l ι i s = s , λ {j} p → transp (λ i₁ → P s j) ι p
+
+  unitor-l-inv-r : Path 
+    (idᶜ ⊗ F ⇒ idᶜ ⊗ F) 
+    (unitor-l-inv ; unitor-l)
+    (id₁ (idᶜ ⊗ F))
+  unitor-l-inv-r =
     ⇒PathP λ { _ (s , _) → ΣPathP
       ( ΣPathP (refl , refl) 
       , implicitFunExt λ {j} →
@@ -76,12 +102,12 @@ module _ {F : IndexedContainer} where
         }
       )
     }
-
-  unitor-r : (F ⊗ idᶜ) ⇒ F
+  
+  unitor-r : F ⊗ idᶜ ⇒ F
   unitor-r _ (_ , si) .fst = si refl
   unitor-r i (_ , si) .snd p = i , refl , p
 
-  unitor-r-inv : F ⇒ (F ⊗ idᶜ) 
+  unitor-r-inv : F ⇒ F ⊗ idᶜ 
   unitor-r-inv _ s .fst = _ , λ i≡j → subst S i≡j s
   unitor-r-inv i s .snd {j} (k , i≡k , p) = 
     transport P≡ p
@@ -97,9 +123,25 @@ module _ {F : IndexedContainer} where
     -- -- But this is not a perfect world.
 
 module _ {F G H : IndexedContainer} where
-  associator : (F ⊗ (G ⊗ H)) ⇒ ((F ⊗ G) ⊗ H)
-  associator _ ((s″ , op″) , op′) .fst  = s″ , λ {j} p″ → op″ p″ , λ p′ → op′ (j , p″ , p′)
-  associator _ ((s″ , op″) , op′) .snd  (k , (p″ , (j , p′ , p))) = j , (k , p″ , p′) , p
+
+  open IndexedContainer F 
+  open IndexedContainer G renaming (S to S′; P to P′) 
+  open IndexedContainer H renaming (S to S″; P to P″) 
+
+  associator : F ⊗ (G ⊗ H) ⇒ (F ⊗ G) ⊗ H
+  associator _ ((s″ , op″) , op′) .fst  = s″ , λ p″ → op″ p″ , λ p′ → op′ (_ , p″ , p′)
+  associator _ ((s″ , op″) , op′) .snd (k , (p″ , (j , p′ , p))) = j , (k , p″ , p′) , p
+
+  associator-inv : (F ⊗ G) ⊗ H ⇒ F ⊗ (G ⊗ H)
+  associator-inv _ (s″ , op) .fst .fst = (s″ , op » fst)
+  associator-inv _ (s″ , op) .fst .snd (_ , p″ , p′) = op p″ .snd p′
+  associator-inv _ (s″ , op) .snd (j , (k , p″ , p′) , p) = k , p″ , j , p′ , p
+
+  is-inv-l : associator ; associator-inv ≡ id₁ _
+  is-inv-l = refl
+
+  is-inv-r : associator-inv ; associator ≡ id₁ _
+  is-inv-r = refl
 
 _² : IndexedContainer → IndexedContainer
 IC ² = IC ⊗ IC

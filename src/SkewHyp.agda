@@ -89,29 +89,7 @@ module _ (S : Type) (e : S) (_•_ : S → (P → S) → S) where
       smoosh-s″ p = s″ p p
     in {! !} -- Goal: ((s • s′) • smoosh-s″) ≡ (s • s′Π•s″)
     -- Why is smoosh different here?
-    -- Probably because I put the associator on the other side
-    -- in the equation.
-    --
-    -- Note that Reader P is dual in some sense to Cowriter P
-    -- Could it be that on positions we want S to be a comonoid for
-    -- the dual skew monoidal structure induced by Cowriter P?
-    -- Capiamo.
+    -- It might be because this is the cartesian part of a
+    -- monoid structure, so it does not act on positions.
 
--- left skew-monoidal
-_⊙_ : Type → Type → Type
-A ⊙ B = A × B × P
 
-I⊙ = P
-
-module _ {A A′ B B′ : Type} where
-  infixl 21 _⊙₁_
-
-  _⊙₁_ : (A → A′) → (B → B′) → A ⊙ B → A′ ⊙ B′ 
-  (f ⊙₁ g) (a , b , p) = f a , g b , p
-
-module _ (X : Type) where
-  lunit-⊙ : I⊙ ⊙ X → X
-  lunit-⊙ (_ , x , _) = x
-
-  runit-⊙ : X → X ⊙ I⊙
-  runit-⊙ x = {! !}

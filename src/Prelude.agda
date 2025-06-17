@@ -89,6 +89,8 @@ module _ (A : Type) (P : A → Type) (x : A) where
   JIso .inv px _ p = subst P p px
   JIso .rightInv b = substRefl {B = P} b
   JIso .leftInv a ι y p = transp (λ i → P (p (i ∨ ι))) ι (a (p ι) λ i → p (i ∧ ι))
+  
+  JEquiv = isoToEquiv JIso
 
 module _ {ℓ} {A : Type ℓ} {B : A → Type ℓ} where
   open import Cubical.Foundations.HLevels 

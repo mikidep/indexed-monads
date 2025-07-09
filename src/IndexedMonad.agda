@@ -227,5 +227,7 @@ ICMonoid→ICMS (raw , is) = RawICMonoid→RawICMS raw , isICMonoid→isICMS raw
 ICMS→ICMonoid : ICMS → ICMonoid
 ICMS→ICMonoid (raw , is) = RawICMS→RawICMonoid raw , isICMS→isICMonoid raw is
 
+-- Since the two back and forths are pointwise definitionally inverses, we can
+-- use Agda′s metaprogramming facilities to extend them to an equivalence.
 unquoteDecl ICMonoid≃ICMS = declStrictEquiv ICMonoid≃ICMS ICMonoid→ICMS ICMS→ICMonoid
 

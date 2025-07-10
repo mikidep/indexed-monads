@@ -93,3 +93,4 @@ module _ (S : Type) (e : S) (_•_ : S → (P → S) → S) where
     -- monoid structure, so it does not act on positions.
 
 
+

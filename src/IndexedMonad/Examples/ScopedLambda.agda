@@ -210,12 +210,12 @@ lam-isicms .e-unit-l = lam-isicms-e-unit-l
 lam-isicms .↖-unit-l = lam-isicms-↖-unit-l
 lam-isicms .e-unit-r s = substRefl {B = LamS} s
 lam-isicms .↗-unit-r {i} s {j} ι p = transp (λ κ → LamP {n = i} (substRefl {B = LamS} s (ι ∨ κ)) j) ι p
-lam-isicms .•-assoc = lam-isicms-•-assoc
-lam-isicms .↑-↗↑-assoc = lam-isicms-↑-↗↑-assoc 
-lam-isicms .↖↑-↑-assoc = lam-isicms-↖↑-↑-assoc
-lam-isicms .↖↖-↖-assoc = lam-isicms-↖↖-↖-assoc
-lam-isicms .↖↗-↗↖-assoc = lam-isicms-↖↗-↗↖-assoc
-lam-isicms .↗-↗↗-assoc = lam-isicms-↗-↗↗-assoc 
+lam-isicms .•-assoc s s′ s″ = sym $ lam-isicms-•-assoc s s′ s″
+lam-isicms .↑-↗↑-assoc s s′ s″  = symP $ lam-isicms-↑-↗↑-assoc s s′ s″  
+lam-isicms .↖↑-↑-assoc s s′ s″  = symP $ lam-isicms-↖↑-↑-assoc s s′ s″ 
+lam-isicms .↖↖-↖-assoc s s′ s″  = symP $ lam-isicms-↖↖-↖-assoc s s′ s″ 
+lam-isicms .↖↗-↗↖-assoc s s′ s″ = symP $ lam-isicms-↖↗-↗↖-assoc s s′ s″ 
+lam-isicms .↗-↗↗-assoc s s′ s″  = symP $ lam-isicms-↗-↗↗-assoc s s′ s″  
 
 -- module IwilareDeBruijn where
 --

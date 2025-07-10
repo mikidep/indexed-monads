@@ -3,28 +3,26 @@
   inputs = {
     # Flake inputs
     nixpkgs.url = "nixpkgs/nixos-unstable";
-    agda-cubical = {
-      url = "github:agda/cubical/2f085f5";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     cubical-containers = {
-      url = "github:phijor/cubical-containers";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.cubical.follows = "agda-cubical";
+      url = "github:phijor/cubical-containers?ref=90eab18";
+      flake = false;
     };
-    agda-index = {
-      url = "github:phijor/agda-index";
-      inputs.nixpkgs.follows = "nixpkgs";
+    cubical-categorical-logic = {
+      url = "github:maxsnew/cubical-categorical-logic?ref=feaab16";
+      flake = false;
     };
+    # agda-index = {
+    #   url = "github:phijor/agda-index";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
   };
 
   # Flake outputs
-  outputs = {
+  outputs = inputs @ {
     self,
     nixpkgs,
-    agda-cubical,
-    agda-index,
-    cubical-containers,
+    # agda-cubical,
+    # agda-index,
     ...
   }: let
     # The systems supported for this flake
@@ -42,37 +40,72 @@
           inherit system;
           pkgs = import nixpkgs {
             inherit system;
-            overlays = [agda-cubical.overlays.default];
           };
         });
   in {
-    devShells = forEachSupportedSystem ({
-      system,
-      pkgs,
-    }: {
-      default = pkgs.mkShell {
-        # The Nix packages provided in the environment
-        # Add any you need here
-        packages = [self.packages.${system}.agdaWithLibs self.packages.${system}.agda-search];
-
-        # Set any environment variables for your dev shell
-        env = {};
-
-        # Add any shell logic you want executed any time the environment is activated
-        shellHook = ''
-        '';
-      };
-    });
     packages = forEachSupportedSystem ({
       pkgs,
       system,
-    }: rec {
-      agdaWithLibs = let
-        cubical-categorical-logic = pkgs.callPackage "${cubical-containers.outPath}/cubical-categorical-logic.nix" {
-          inherit (pkgs) cubical;
+    }: let
+      cubical = pkgs.agdaPackages.cubical;
+      cubical-categorical-logic = pkgs.agdaPackages.mkDerivation {
+        pname = "cubical-categorical-logic";
+        version = "feaab16";
+        src = inputs.cubical-categorical-logic;
+        preConfigure = ''
+          make Everything.agda
+        '';
+        buildInputs = [cubical];
+        meta = {
+          description = "Extensions to the cubical stdlib category theory for categorical logic/type theory";
+          platforms = pkgs.lib.platforms.all;
         };
-      in
-        pkgs.agda.withPackages (_: [pkgs.cubical cubical-containers.packages.${system}.default cubical-categorical-logic]);
+      };
+      cubical-containers = pkgs.agdaPackages.mkDerivation {
+        pname = "cubical-containers";
+        version = "90eab18";
+        src = inputs.cubical-containers;
+        postPatch = ''
+          patchShebangs ./gen-everything.sh
+        '';
+        buildPhase = ''
+          runHook preInstall
+
+          echo 'Generating list of modules...'
+          ./gen-everything.sh
+
+          echo 'Checking `Everything.agda`...'
+          agda ./Everything.agda
+
+          echo 'Checking `README.agda`...'
+          agda ./README.agda
+
+          echo "Generating HTML docs..."
+          agda --html --html-dir=$html --highlight-occurrences ./README.agda
+
+          runHook postInstall
+        '';
+        buildInputs = [cubical cubical-categorical-logic];
+        meta = {
+          platforms = pkgs.lib.platforms.all;
+        };
+      };
+      indexed-monads = pkgs.agdaPackages.mkDerivation {
+        pname = "indexed-monads";
+        version = "0.1";
+        src = ./.;
+        everythingFile = "src/Everything.agda";
+        buildInputs = [cubical];
+        meta = {
+          platforms = pkgs.lib.platforms.all;
+        };
+      };
+    in rec {
+      agdaWithLibs = pkgs.agda.withPackages [
+        cubical
+        # cubical-categorical-logic
+        # cubical-containers
+      ];
       docs = pkgs.stdenv.mkDerivation {
         name = "indexed-monads-docs";
         pname = "indexed-monads-docs";
@@ -85,13 +118,14 @@
           runHook postBuild
         '';
       };
-      agda-search = pkgs.writeShellApplication {
-        name = "agda-search";
-        runtimeInputs = with pkgs; [fzf firefox (agda-index.packages.${system}.default)];
-        text = ''
-          agda-index ${docs}/ | fzf -d' ' --with-nth='2' | cut -d' ' -f1 | xargs -I % firefox --new-window %
-        '';
-      };
+      default = indexed-monads;
+      # agda-search = pkgs.writeShellApplication {
+      #   name = "agda-search";
+      #   runtimeInputs = with pkgs; [fzf firefox (agda-index.packages.${system}.default)];
+      #   text = ''
+      #     agda-index ${docs}/ | fzf -d' ' --with-nth='2' | cut -d' ' -f1 | xargs -I % firefox --new-window %
+      #   '';
+      # };
     });
   };
 }

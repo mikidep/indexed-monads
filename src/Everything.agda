@@ -1,4 +1,4 @@
-module EverythingIC where
+module Everything where
 
 import Prelude
 import IndexedContainer

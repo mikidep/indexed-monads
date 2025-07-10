@@ -54,9 +54,9 @@ module _ (_▹_ : W → I → I) (isAct : IsWIAction _▹_) where
   wic-isicms .e-unit-r {i} w = ·IdL _ ∙ substRefl {x = i} w
   wic-isicms .↗-unit-r w  = funExtDep λ _ → issI _ _ _ _
   wic-isicms .•-assoc {i} w w′ w″ = 
-    sym (·Assoc w (w′ refl) (w″ refl (↗ {s′ = w′} refl)))
-    ∙ cong (w ·_) (cong (w′ refl ·_) (cong₂ (λ j x → w″ {j = j} refl x) (pres· w (w′ refl) ≡$ i) (toPathP (issI _ _ _ _))))
-  wic-isicms .↑-↗↑-assoc {i} w w′ w″ = toPathP (funExt λ p → transportRefl ((w · w′ refl) ▹ i) ∙ (pres· w (w′ refl) ≡$ i))
+    ·Assoc w (w′ refl) (w″ refl refl) 
+    ∙ cong ((w · w′ refl) ·_) (cong₂ (λ j x → w″ {j = j} refl x) (sym $ pres· w (w′ refl) ≡$ i) (toPathP (issI _ _ _ _)))
+  wic-isicms .↑-↗↑-assoc {i} w w′ w″ = toPathP (funExt λ p → transportRefl (w′ refl ▹ (w ▹ i)) ∙ (sym $ pres· w (w′ refl) ≡$ i))
   wic-isicms .↖↑-↑-assoc {i} w w′ w″ = toPathP (funExt λ p → transportRefl (w ▹ i))
   wic-isicms .↖↖-↖-assoc w w′ w″  = toPathP (funExt λ p → issI _ _ _ _)
   wic-isicms .↖↗-↗↖-assoc w w′ w″ = toPathP (funExt λ p → issI _ _ _ _)

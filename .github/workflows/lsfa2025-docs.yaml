@@ -1,0 +1,43 @@
+name: Type check and publish library
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  render:
+    name: Render docs
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Run `nix build`
+        run: nix build --print-build-logs '.#docs'
+      # XXX: https://github.com/actions/deploy-pages/issues/58
+      - name: "Fix permissions on build output"
+        run: |
+          mkdir public
+          cp --recursive --dereference --no-preserve=mode,ownership result public/lsfa25
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./public
+  deploy:
+    name: "Deploy rendered Agda code to Pages"
+    if: success()
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: render
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

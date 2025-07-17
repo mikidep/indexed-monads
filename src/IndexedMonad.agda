@@ -228,5 +228,6 @@ ICMonoid→ICMS (raw , is) = RawICMonoid→RawICMS raw , isICMonoid→isICMS raw
 ICMS→ICMonoid : ICMS → ICMonoid
 ICMS→ICMonoid (raw , is) = RawICMS→RawICMonoid raw , isICMS→isICMonoid raw is
 
+-- This unfolds into an equivalence of types
 unquoteDecl ICMonoid≃ICMS = declStrictEquiv ICMonoid≃ICMS ICMonoid→ICMS ICMS→ICMonoid
 

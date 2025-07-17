@@ -1,10 +1,11 @@
-module EverythingIC where
+module Everything where
 
 import Prelude
 import IndexedContainer
 import IndexedContainer.Properties
 import IndexedContainer.MonoidalCategory
 import IndexedSetContainer
+import IndexedMonad
 import IndexedMonadMorphism
 import IndexedMonad.Examples.Product
 import IndexedMonad.Examples.Writer

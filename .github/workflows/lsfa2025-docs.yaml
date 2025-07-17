@@ -2,7 +2,7 @@ name: Type check and publish library
 on:
   push:
     branches:
-      - main
+      - lsfa2025
   workflow_dispatch:
 
 permissions:
